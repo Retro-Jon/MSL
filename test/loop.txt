@@ -1,0 +1,13 @@
+[3] loop
+    ["Constant"] println
+end
+
+[<a> 4]
+[<a>] loop
+    ["Global"] println
+end
+
+[<.a> 5 <.b> 6 <.c> 7][<.b>] loop
+    ["Member"] println
+end
+

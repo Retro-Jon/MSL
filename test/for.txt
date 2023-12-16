@@ -1,0 +1,11 @@
+# start = 0, end = 10, step = 1
+[0 5 1] for
+    ["Hello"] println
+end
+
+["\n"] print
+
+[<i> 0 5 1] for
+    ["Hello " <i> "\n"] print
+end
+

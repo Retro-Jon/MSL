@@ -1,0 +1,11 @@
+[<a> 1]
+
+[<t> true] while
+    ["Hello"] println
+
+    [<a>] [<a> 1] - =
+
+    [<a> 0] == if
+        [<t>] [false] =
+    end
+end

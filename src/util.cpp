@@ -47,12 +47,9 @@ std::string get_token_string(Token t)
         case TokenType::OPERATOR:
         case TokenType::COMMAND:
         case TokenType::DATA_String:
-        case TokenType::FUNCTION_CALL:
-        case TokenType::CONDITION_BLOCK:
-        case TokenType::LOOP_BLOCK:
             result = std::any_cast<std::string>(t.value);
             break;
-        
+
         case TokenType::DATA_Char:
             result = std::any_cast<char>(t.value);
             break;
@@ -79,6 +76,10 @@ std::string get_token_string(Token t)
         
         case TokenType::SUB_LIST_END:
             result = "}";
+            break;
+
+        default:
+            result = TokenTypeString[t.type];
             break;
     }
 

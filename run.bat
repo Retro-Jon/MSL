@@ -1,1 +1,1 @@
-build\test.exe test\conditionals.txt
+build\test.exe test\loops.txt

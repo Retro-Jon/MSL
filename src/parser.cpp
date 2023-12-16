@@ -95,7 +95,7 @@ bool parse(Node* nodes)
                     error_msg(val.c_str(), "Commands cannot be placed in lists.\nClose the leading list before executing commands.");
                     return false;
                 }
-                if (val == "defunc" || val == "if" || val == "for" || val == "while" || val == "?")
+                if (val == "defunc" || val == "if" || val == "loop" || val == "for" || val == "while" || val == "?")
                     node_stack.push_back(current);
                 else if (val == "end")
                 {
