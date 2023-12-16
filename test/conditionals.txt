@@ -1,0 +1,14 @@
+[1 2 3]
+
+[true] if
+    ["Yay"] println
+    [4 5 6]
+end
+
+[1 'a'] + ?
+    drop-list
+    ["Oops"] println
+end
+
+["End"] println
+

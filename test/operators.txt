@@ -1,0 +1,26 @@
+[<a> 0]
+
+# Math
+
+[<a>] [3 2.4] + =
+[<a>] [<a> 1] - =
+[<a>] [<a> 3] * =
+[<a>] [<a> 2] / =
+["a = " <a>] print [""] println
+
+# Concatination
+
+[<b> "\nAgain."]
+
+["Hello" "World!" <b>] + println
+
+# Math with offsets
+
+[<c> 1 2 3]
+[<d> 2]
+
+print-stack
+
+[<c> <d>] at [<c>] at get-list + = print-stack
+[<c>] at get-list println
+
