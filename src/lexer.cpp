@@ -29,6 +29,10 @@ bool lex(Node* nodes)
             case '}':
                 pointer->t.type = TokenType::SUB_LIST_END;
                 break;
+            case '(':
+                if (val.back() == ')')
+                    pointer->t.type = TokenType::USER_FUNCTION;
+                break;
             default:
                 break;
         }

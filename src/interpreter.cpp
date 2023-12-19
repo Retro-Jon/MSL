@@ -1,5 +1,6 @@
 #include "lang.hpp"
 #include <iostream>
+#include <map>
 
 std::vector<Token> reverse_list(std::vector<Token> list)
 {
@@ -7,7 +8,7 @@ std::vector<Token> reverse_list(std::vector<Token> list)
 
     for (int i = list.size() - 1; i >= 0; i--)
         res.push_back(list.at(i));
-    
+   
     return res;
 }
 
@@ -73,14 +74,19 @@ Token get_tag(std::vector<Token> list, Token tag)
 bool interpret(Node* program, std::vector<Token> &backup_stack)
 {
     Node* current = program;
+    bool exception = false;
+    std::string exception_message = "";
+    std::map<std::string, Node*> functions;
+
+    current = program;
+
     std::vector<Token> stack;
 
     for (Token t : backup_stack)
         stack.push_back(t);
 
     bool in_list = false;
-    bool exception = false;
-    std::string exception_message = "";
+    Token temp;
 
     while (current != nullptr)
     {
@@ -662,6 +668,70 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                         push_list(stack, {current_val, end_val, step});
 
                     push_list(stack, {block});
+                } else if (command == "defunc")
+                {
+                    if (temp.type != TokenType::USER_FUNCTION)
+                    {
+                        exception = true;
+                        exception_message = "User function identifier not provided";
+                        break;
+                    }
+
+                    if (functions.count(std::any_cast<std::string>(temp.value)) > 0)
+                    {
+                        exception = true;
+                        exception_message = "Duplicate definition: " + std::any_cast<std::string>(temp.value);
+                        break;
+                    }
+
+                    functions.insert({std::any_cast<std::string>(temp.value), current});
+                    temp.type = TokenType::NULL_TOKEN;
+                    current = current->alt_next;
+                } else if (command == "$")
+                {
+                    current = current->default_next;
+
+                    if (current == nullptr)
+                    {
+                        exception = true;
+                        exception_message = "No value found.";
+                        break;
+                    }
+
+                    temp.value = current->t.value;
+                    temp.type = current->t.type;
+                } else if (command == "return")
+                {
+                    std::vector<Token> list = reverse_list(pop_list(stack));
+                    int stage = 0;
+
+                    while (!stack.empty())
+                    {
+                        if (list.empty())
+                        {
+                            list = reverse_list(pop_list(stack));
+                            continue;
+                        }
+
+                        if (stage == 0 && list.back().type == TokenType::FUNCTION_CALL)
+                            stage = 1;
+                        else if (stage == 1 && list.back().type == TokenType::ADDRESS)
+                            break;
+
+                        list = reverse_list(pop_list(stack));
+                    }
+
+                    print_list(stack);
+
+                    if (list.back().type != TokenType::ADDRESS)
+                    {
+                        exception = true;
+                        exception_message = "No return address";
+                        break;
+                    }
+
+                    current = std::any_cast<Node*>(list.front().value);
+                    skip_end = true;
                 } else if (command == "end")
                 {
                     std::string target = std::any_cast<std::string>(current->alt_next->t.value);
@@ -681,6 +751,31 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                         break;
                     }
                 }
+                break;
+            }
+
+            case TokenType::USER_FUNCTION:
+            {
+                std::vector<Token> args = reverse_list(pop_list(stack));
+
+                if (functions.count(command) == 0)
+                {
+                    exception = true;
+                    exception_message = "Undefined function: " + command;
+                    break;
+                }
+
+                Token ret;
+                ret.type = TokenType::ADDRESS;
+                ret.value = current->default_next;
+                push_list(stack, {ret});
+
+                Token func;
+                func.type = TokenType::FUNCTION_CALL;
+                push_list(stack, {func});
+                push_list(stack, args);
+
+                current = functions.at(command);
                 break;
             }
         }

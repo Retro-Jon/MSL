@@ -1,1 +1,1 @@
-build\test.exe test\bottles.txt
+build\test.exe test\functions.txt

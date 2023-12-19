@@ -46,6 +46,7 @@ std::string get_token_string(Token t)
         case TokenType::TAG_MEMBER:
         case TokenType::OPERATOR:
         case TokenType::COMMAND:
+        case TokenType::USER_FUNCTION:
         case TokenType::DATA_String:
             result = std::any_cast<std::string>(t.value);
             break;

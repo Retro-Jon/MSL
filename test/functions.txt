@@ -1,0 +1,8 @@
+$ (my-func) defunc
+    ["HelloWorld!"] println
+
+    return
+end
+
+[] (my-func)
+

@@ -18,10 +18,12 @@ enum TokenType
     SUB_LIST_START,
     SUB_LIST_END,
     FUNCTION_CALL,
+    USER_FUNCTION,
     CONDITION_BLOCK,
     LOOP_BLOCK,
     COMMAND,
-    OPERATOR
+    OPERATOR,
+    ADDRESS
 };
 
 struct Token
@@ -52,10 +54,12 @@ const std::string TokenTypeString[] = {
     "SUB_LIST_START",
     "SUB_LIST_END",
     "FUNCTION_CALL",
+    "USER_FUNCTION",
     "CONDITION_BLOCK",
     "LOOP_BLOCK",
     "COMMAND",
-    "OPERATOR"
+    "OPERATOR",
+    "ADDRESS"
 };
 
 Node* tokenize(const char* code);
