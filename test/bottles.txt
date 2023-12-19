@@ -1,14 +1,14 @@
 [<bottles> 100]
 
-[<count> <bottles> 2 -1] loop-for
+[<count> <bottles> 2 -1] for
     [<count>] at get {" bottles of beer on the wall!\n"} print
     [<count>] at get {" bottles of beer.\n"} print
     ["Take one down, pass it around."] println
 
-    [<count>] at get {2} > if
-        [<count>] at get {1} - {" bottles of beer on the wall!\n} print
+    [<count> 2] > if
+        [<count> 1] - {" bottles of beer on the wall!\n\n"} print
     end
-end-loop
+end
 
 ["1 more bottle of beer on the wall!\n"
 "1 more bottle of beer on the wall!"

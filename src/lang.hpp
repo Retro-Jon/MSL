@@ -33,6 +33,7 @@ struct Token
 struct Node
 {
     Token t;
+    int line;
     Node* default_next = nullptr;
     Node* alt_next = nullptr;
 };
@@ -60,7 +61,7 @@ const std::string TokenTypeString[] = {
 Node* tokenize(const char* code);
 bool lex(Node* Nodes);
 bool parse(Node* Nodes);
-bool interpret(Node* program);
+bool interpret(Node* program, std::vector<Token> &backup_stack);
 
 std::string load_file(const char* path);
 void delete_nodes(Node* pointer);
@@ -70,4 +71,4 @@ std::string trim_num_string(std::string num);
 int find_tag(std::vector<Token> list, Token tag);
 bool is_tag(Token t);
 bool is_value(Token t);
-void error_msg(const char* cause, const char* explanation);
+void error_msg(Node* node, const char* explanation);

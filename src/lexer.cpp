@@ -45,7 +45,7 @@ bool lex(Node* nodes)
                 pointer->t.value = val;
             } else if (val == "true" || val == "false")
                 pointer->t.type = TokenType::DATA_Bool;
-            else if (val.back() == '>')
+            else if (val.back() == '>' && val.length() > 1)
             {
                 if (val.find("<..") != std::string::npos)
                     pointer->t.type = TokenType::TAG_LOCAL;
@@ -55,7 +55,7 @@ bool lex(Node* nodes)
                     pointer->t.type = TokenType::TAG_GLOBAL;
                 else
                 {
-                    error_msg(val.c_str(), "Incomplete TAG");
+                    error_msg(pointer, "Incomplete TAG");
                     return false;
                     break;
                 }
@@ -83,7 +83,7 @@ bool lex(Node* nodes)
                     {
                         if (!isdigit(c) && c != '.' && c != '-')
                         {
-                            error_msg(val.c_str(), "Numeric values cannot include letters.");
+                            error_msg(pointer, "Numeric values cannot include letters.");
                             return false;
                         }
                         i++;
@@ -109,7 +109,7 @@ bool lex(Node* nodes)
         switch (pointer->t.type)
         {
             case TokenType::NULL_TOKEN:
-                error_msg(val.c_str(), "Unidentified token");
+                error_msg(pointer, "Unidentified token");
                 return false;
                 break;
             
@@ -124,7 +124,7 @@ bool lex(Node* nodes)
                 {
                     if (char_data.front() != '\\')
                     {
-                        error_msg(char_data.c_str(), "A Char can only be 1 character long with the exception of a leading \\");
+                        error_msg(pointer, "A Char can only be 2 character long with the exception of a leading \\");
                         return false;
                     }
                 }
@@ -148,7 +148,7 @@ bool lex(Node* nodes)
                     pointer->t.value = std::any_cast<bool>(false);
                 else
                 {
-                    error_msg(val.c_str(), "Unknown boolean value.");
+                    error_msg(pointer, "Unknown boolean value.");
                     return false;
                 }
             }

@@ -70,10 +70,14 @@ Token get_tag(std::vector<Token> list, Token tag)
     return tag;
 }
 
-bool interpret(Node* program)
+bool interpret(Node* program, std::vector<Token> &backup_stack)
 {
     Node* current = program;
     std::vector<Token> stack;
+
+    for (Token t : backup_stack)
+        stack.push_back(t);
+
     bool in_list = false;
     bool exception = false;
     std::string exception_message = "";
@@ -214,7 +218,7 @@ bool interpret(Node* program)
                     }
                     if (!exception)
                         push_list(stack, {res});
-                } else if (command == "==" || command == "!=")
+                } else if (command == "==" || command == "!=" || command == ">" || command == ">=" || command == "<" || command == "<=")
                 {
                     Token res;
                     bool res_set = false;
@@ -257,19 +261,42 @@ bool interpret(Node* program)
                             return false;
                         };
 
+                        auto greater = [](Token a, Token b)
+                        {
+                            if (a.type == TokenType::DATA_Bool)
+                                return std::any_cast<bool>(a.value) > std::any_cast<bool>(b.value);
+                            if (a.type == TokenType::DATA_Char)
+                                return std::any_cast<char>(a.value) > std::any_cast<char>(b.value);
+                            if (a.type == TokenType::DATA_String)
+                                return std::any_cast<std::string>(a.value) > std::any_cast<std::string>(b.value);
+                            if (a.type == TokenType::DATA_Number)
+                                return std::any_cast<float>(a.value) > std::any_cast<float>(b.value);
+
+                            return false;
+                        };
+
+                        auto set_res = [&res, &res_set]()
+                        {
+                            res.type = TokenType::DATA_Bool;
+                            res.value = false;
+                            res_set = true;
+                        };
+
                         if (command == "==" && !equal(res, val))
-                        {
-                            res.type = TokenType::DATA_Bool;
-                            res.value = false;
-                            res_set = true;
+                            set_res();
+                        else if (command == "!=" && equal(res, val))
+                            set_res();
+                        else if (command == ">" && !greater(res, val))
+                            set_res();
+                        else if (command == ">=" && !greater(res, val) && !equal(res, val))
+                            set_res();
+                        else if (command == "<" && greater(res, val))
+                            set_res();
+                        else if (command == "<=" && greater(res, val) && !equal(res, val))
+                            set_res();
+
+                        if (res_set == true)
                             break;
-                        } else if (command == "!=" && equal(res, val))
-                        {
-                            res.type = TokenType::DATA_Bool;
-                            res.value = false;
-                            res_set = true;
-                            break;
-                        }
                     }
 
                     if (exception == true)
@@ -680,10 +707,13 @@ bool interpret(Node* program)
 
     if (exception == true)
     {
-        error_msg(get_token_string(current->t).c_str(), exception_message.c_str());
+        error_msg(current, exception_message.c_str());
         print_list(stack);
+        std::cout << "\nStack reverted to backup upon error." << std::endl;
         return false;
     }
+
+    backup_stack = stack;
 
     return true;
 }

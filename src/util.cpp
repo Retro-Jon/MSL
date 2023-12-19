@@ -196,9 +196,10 @@ bool is_value(Token t)
     return false;
 }
 
-void error_msg(const char* cause, const char* explanation)
+void error_msg(Node* node, const char* explanation)
 {
     std::cout << "[ERROR]" << std::endl;
-    std::cout << cause << "\n" << std::endl;
+    std::cout << "Line " << node->line << std::endl;
+    std::cout << get_token_string(node->t) << "\n" << std::endl;
     std::cout << explanation << std::endl;
 }

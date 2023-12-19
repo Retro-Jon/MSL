@@ -1,1 +1,1 @@
-build\test.exe test\loops.txt
+build\test.exe test\bottles.txt

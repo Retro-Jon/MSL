@@ -20,7 +20,7 @@ bool parse(Node* nodes)
             {
                 if (!node_stack.empty() && (node_stack.back()->t.type == TokenType::LIST_START || node_stack.back()->t.type == TokenType::SUB_LIST_START))
                 {
-                    error_msg(val.c_str(), "Nested lists are not permitted.");
+                    error_msg(current, "Nested lists are not permitted.");
                     return false;
                 }
                 node_stack.push_back(current);
@@ -32,7 +32,7 @@ bool parse(Node* nodes)
             {
                 if (node_stack.empty() || node_stack.back()->t.type != TokenType::LIST_START)
                 {
-                    error_msg(val.c_str(), "Unopened list.");
+                    error_msg(current, "Unopened list.");
                     return false;
                 }
                 
@@ -45,7 +45,7 @@ bool parse(Node* nodes)
             {
                 if (node_stack.empty() || node_stack.back()->t.type != TokenType::SUB_LIST_START)
                 {
-                    error_msg(val.c_str(), "Unopened sub list.");
+                    error_msg(current, "Unopened sub list.");
                     return false;
                 }
                 
@@ -92,7 +92,7 @@ bool parse(Node* nodes)
             {
                 if (in_list)
                 {
-                    error_msg(val.c_str(), "Commands cannot be placed in lists.\nClose the leading list before executing commands.");
+                    error_msg(current, "Commands cannot be placed in lists.\nClose the leading list before executing commands.");
                     return false;
                 }
                 if (val == "defunc" || val == "if" || val == "loop" || val == "for" || val == "while" || val == "?")
@@ -101,7 +101,7 @@ bool parse(Node* nodes)
                 {
                     if (node_stack.empty() || node_stack.back()->t.type != TokenType::COMMAND)
                     {
-                        error_msg(val.c_str(), "Unopened code block.");
+                        error_msg(current, "Unopened code block.");
                         return false;
                     }
                     current->alt_next = node_stack.back();
@@ -115,7 +115,7 @@ bool parse(Node* nodes)
             {
                 if (in_list)
                 {
-                    error_msg(val.c_str(), "Operators cannot be placed in lists.\nClose the leading list before using operators.");
+                    error_msg(current, "Operators cannot be placed in lists.\nClose the leading list before using operators.");
                     return false;
                 }
             }
@@ -127,11 +127,11 @@ bool parse(Node* nodes)
     if (!node_stack.empty())
     {
         if (node_stack.back()->t.type == TokenType::COMMAND)
-            error_msg(get_token_string(node_stack.back()->t).c_str(), "Block not closed with 'end' command.");
+            error_msg(node_stack.back(), "Block not closed with 'end' command.");
         else if (node_stack.back()->t.type == TokenType::LIST_START)
-            error_msg(get_token_string(node_stack.back()->t).c_str(), "Unclosed list.");
+            error_msg(node_stack.back(), "Unclosed list.");
         else if (node_stack.back()->t.type == TokenType::SUB_LIST_START)
-            error_msg(get_token_string(node_stack.back()->t).c_str(), "Unclosed sub list.");
+            error_msg(node_stack.back(), "Unclosed sub list.");
         return false;
     }
     return true;
