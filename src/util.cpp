@@ -60,7 +60,10 @@ std::string get_token_string(Token t)
             break;
         
         case TokenType::DATA_Bool:
-            result = std::to_string(std::any_cast<bool>(t.value));
+            if (std::any_cast<bool>(t.value) == true)
+                result = "true";
+            else if (std::any_cast<bool>(t.value) == false)
+                result = "false";
             break;
         
         case TokenType::LIST_START:

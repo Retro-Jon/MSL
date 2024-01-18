@@ -137,6 +137,36 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
 
             case TokenType::OPERATOR:
             {
+                auto equal = [&exception, &exception_message](Token a, Token b)
+                {
+                    if (a.type != b.type)
+                    {
+                        exception = true;
+                        exception_message = "Mismatched Types";
+                        return std::any_cast<bool>(false);
+                    }
+                    if (a.type == TokenType::DATA_Bool)
+                        return std::any_cast<bool>(a.value) == std::any_cast<bool>(b.value);
+                    if (a.type == TokenType::DATA_Char)
+                        return std::any_cast<char>(a.value) == std::any_cast<char>(b.value);
+                    if (a.type == TokenType::DATA_String)
+                        return std::any_cast<std::string>(a.value) == std::any_cast<std::string>(b.value);
+                    if (a.type == TokenType::DATA_Number)
+                        return std::any_cast<float>(a.value) == std::any_cast<float>(b.value);
+
+                    return false;
+                };
+                
+                Token res;
+                bool res_set = false;
+                
+                auto set_res = [&res, &res_set]()
+                {
+                    res.type = TokenType::DATA_Bool;
+                    res.value = false;
+                    res_set = true;
+                };
+
                 std::vector<Token> values = reverse_list(pop_list(stack));
 
                 if (command == "=")
@@ -162,8 +192,6 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                     stack.at(pos) = values.front();
                 } else if (command == "+" || command == "-" || command == "*" || command == "/")
                 {
-                    Token res;
-
                     for (Token current_val : values)
                     {
                         Token val = current_val;
@@ -226,9 +254,6 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                         push_list(stack, {res});
                 } else if (command == "==" || command == "!=" || command == ">" || command == ">=" || command == "<" || command == "<=")
                 {
-                    Token res;
-                    bool res_set = false;
-
                     for (Token current_val : values)
                     {
                         Token val = get_tag(stack, current_val);
@@ -253,20 +278,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                             break;
                         }
 
-                        auto equal = [](Token a, Token b)
-                        {
-                            if (a.type == TokenType::DATA_Bool)
-                                return std::any_cast<bool>(a.value) == std::any_cast<bool>(b.value);
-                            if (a.type == TokenType::DATA_Char)
-                                return std::any_cast<char>(a.value) == std::any_cast<char>(b.value);
-                            if (a.type == TokenType::DATA_String)
-                                return std::any_cast<std::string>(a.value) == std::any_cast<std::string>(b.value);
-                            if (a.type == TokenType::DATA_Number)
-                                return std::any_cast<float>(a.value) == std::any_cast<float>(b.value);
-
-                            return false;
-                        };
-
+                        
                         auto greater = [](Token a, Token b)
                         {
                             if (a.type == TokenType::DATA_Bool)
@@ -279,13 +291,6 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                                 return std::any_cast<float>(a.value) > std::any_cast<float>(b.value);
 
                             return false;
-                        };
-
-                        auto set_res = [&res, &res_set]()
-                        {
-                            res.type = TokenType::DATA_Bool;
-                            res.value = false;
-                            res_set = true;
                         };
 
                         if (command == "==" && !equal(res, val))
@@ -314,6 +319,52 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                         res.value = true;
                     
                     push_list(stack, {res});
+                } else if (command == "and" || command == "or")
+                {
+                    for (Token current_val : values)
+                    {
+                        Token val = get_tag(stack, current_val);
+
+                        if (is_tag(val))
+                        {
+                            exception = true;
+                            exception_message = "Tag not found.";
+                            break;
+                        }
+
+                        if (val.type != TokenType::DATA_Bool)
+                        {
+                            exception = true;
+                            exception_message = "Can only compare booleans.";
+                            break;
+                        }
+
+
+                        if (res.type == TokenType::NULL_TOKEN)
+                        {
+                            res = val;
+                            continue;
+                        }
+
+                        if (command == "and" && !equal(res, val))
+                            set_res();
+                        else if (command == "or" && (std::any_cast<bool>(res.value) == false && std::any_cast<bool>(val.value) == false))
+                            set_res();
+                        
+                        res.type = TokenType::DATA_Bool;
+
+                        if (res_set == true)
+                            break;
+                    }
+
+                    if (exception == true)
+                        break;
+
+                    res.type = TokenType::DATA_Bool;
+                    if (res_set == false)
+                        res.value = true;
+
+                    push_list(stack, {res});
                 }
                 break;
             }
@@ -338,6 +389,30 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                         if (command == "println")
                             std::cout << std::endl;
                     }
+                } else if (command == "input")
+                {
+                    std::string val;
+                    std::getline(std::cin, val);
+
+                    Token t;
+                    if (val.at(0) >= '0' && val.at(0) <= '9')
+                    {
+                        t.value = std::stof(val);
+                        t.type = TokenType::DATA_Number;
+                    } else if (val == "true")
+                    {
+                        t.value = true;
+                        t.type = TokenType::DATA_Bool;
+                    } else if (val == "false")
+                    {
+                        t.value = true;
+                        t.type = TokenType::DATA_Bool;
+                    } else {
+                        t.value = val;
+                        t.type = TokenType::DATA_String;
+                    }
+
+                    push_list(stack, {t});
                 } else if (command == "print-stack")
                 {
                     print_list(stack);
@@ -722,7 +797,6 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                     }
 
                     print_list(stack);
-
                     if (list.back().type != TokenType::ADDRESS)
                     {
                         exception = true;
@@ -750,6 +824,10 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                         skip_end = true;
                         break;
                     }
+                } else if (command == "exit")
+                {
+                    current = nullptr;
+                    break;
                 }
                 break;
             }
