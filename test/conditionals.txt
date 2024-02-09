@@ -6,8 +6,7 @@
 end
 
 [1 'a'] + ?
-    drop-list
-    ["Oops"] println
+    {"Oops"} println
 end
 
 ["End"] println

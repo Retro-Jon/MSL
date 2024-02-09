@@ -1,0 +1,11 @@
+[<array> "abc" "123"]
+
+[<i> -1 1 1] for
+    [<offset>] [<i>] at get merge
+    [<offset>] [<offset> 1] + =
+
+    [<array> <offset>] at get println
+end
+
+[1 2]
+

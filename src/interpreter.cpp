@@ -425,7 +425,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                 } else if (command == "at")
                 {
                     std::vector<Token> list = reverse_list(pop_list(stack));
-                    // GLOBAL_TAG | LOCAL_TAG | MEMBER_TAG
+                    // GLOBAL_TAG | LOCAL_TAG | MEMBER_TAG | DATA_String
                     // INT
 
                     if (list.size() == 0)
@@ -437,7 +437,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
 
                     int pos = find_tag(stack, list.at(0));
 
-                    if (pos < 0)
+                    if (pos < 0 && list.at(0).type != TokenType::DATA_String)
                     {
                         exception = true;
                         exception_message = "Tag not found.";
@@ -484,26 +484,40 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                         break;
                     }
 
-                    if (pos + offset + 1 > stack.size() - 1 || pos + offset + 1 < 0)
-                    {
-                        exception = true;
-                        exception_message = "Index not found in stack.";
-                        break;
-                    }
+                    Token res;
 
-                    for (int i = pos + offset + 1; i >= pos; i--)
+                    if (list.at(0).type != TokenType::DATA_String)
                     {
-                        if (stack.at(i).type >= TokenType::LIST_START)
+                        if (pos + offset + 1 > stack.size() - 1 || pos + offset + 1 < 0)
                         {
                             exception = true;
-                            exception_message = "Index crosses into another list.";
+                            exception_message = "Index not found in stack.";
                             break;
                         }
-                    }
 
-                    Token res;
-                    res.type = TokenType::DATA_Number;
-                    res.value = float(pos + offset + 1);
+                        for (int i = pos + offset + 1; i >= pos; i--)
+                        {
+                            if (stack.at(i).type >= TokenType::LIST_START)
+                            {
+                                exception = true;
+                                exception_message = "Index crosses into another list.";
+                                break;
+                            }
+                        }
+
+                        res.type = TokenType::DATA_Number;
+                        res.value = float(pos + offset + 1);
+                    } else {
+                        if (offset > std::any_cast<std::string>(list.at(0).value).length())
+                        {
+                            exception = true;
+                            exception_message = "Index not found in provided string.";
+                            break;
+                        }
+
+                        res.type = TokenType::DATA_Char;
+                        res.value = std::any_cast<std::string>(list.at(0).value).at(offset);
+                    }
 
                     push_list(stack, {res});
                 } else if (command == "get")
@@ -587,22 +601,33 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                         {
                             current = current->alt_next;
                             skip_end = true;
+                            
+                            Token block;
+                            block.type = TokenType::CONDITION_BLOCK;
+                            block.value = TokenTypeString[TokenType::CONDITION_BLOCK];
+                            push_list(stack, {block});
                         }
                     } else {
                         if (!exception)
                         {
                             current = current->alt_next;
                             skip_end = true;
-                        }
+                        } else {
+                            exception = false;
+                            Token e_msg;
+                            e_msg.type = TokenType::DATA_String;
+                            e_msg.value = exception_message;
+                            
+                            Token block;
+                            block.type = TokenType::CONDITION_BLOCK;
+                            block.value = TokenTypeString[TokenType::CONDITION_BLOCK];
 
-                        exception = false;
+                            push_list(stack, {block});
+                            push_list(stack, {e_msg});
+                        }
                     }
 
-                    Token block;
-                    block.type = TokenType::CONDITION_BLOCK;
-                    block.value = TokenTypeString[TokenType::CONDITION_BLOCK];
-                    push_list(stack, {block});
-                } else if (command == "loop")
+               } else if (command == "loop")
                 {
                     std::vector<Token> list = pop_list(stack);
 
@@ -827,6 +852,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                 } else if (command == "exit")
                 {
                     current = nullptr;
+                    skip_end = true;
                     break;
                 }
                 break;
@@ -864,9 +890,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
             {
                 if (std::any_cast<std::string>(current->default_next->t.value) == "?")
                 {
-                    Token e_msg;
-                    e_msg.type = TokenType::DATA_String;
-                    e_msg.value = exception_message;
+                    current = current->default_next;
                     continue;
                 }
             }
