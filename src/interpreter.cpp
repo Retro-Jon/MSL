@@ -374,6 +374,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                 if (command == "print" || command == "println")
                 {
                     std::vector<Token> list = pop_list(stack);
+                    std::cout << "ListSize: " << list.size() << std::endl;
                     
                     for (Token t : reverse_list(list))
                     {
@@ -531,7 +532,21 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                         break;
         	        }
 
-                    push_list(stack, {stack.at(std::any_cast<float>(tag.front().value))});
+                    if (std::any_cast<float>(tag.front().value) >= stack.size() || stack.size() == 0)
+                    {
+                        exception = true;
+                        exception_message = "Provided index does not exist on the stack.";
+                        break;
+                    }
+
+                    if (!is_value(stack.at(std::any_cast<float>(tag.front().value))))
+                    {
+                        Token t_type;
+                        t_type.type = TokenType::DATA_String;
+                        t_type.value = TokenTypeString[stack.at(std::any_cast<float>(tag.front().value)).type];
+                        push_list(stack, {t_type});
+                    } else
+                        push_list(stack, {stack.at(std::any_cast<float>(tag.front().value))});
                 } else if (command == "get-list")
 				{
                     std::vector<Token> tag = pop_list(stack);
@@ -627,7 +642,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                         }
                     }
 
-               } else if (command == "loop")
+                } else if (command == "loop")
                 {
                     std::vector<Token> list = pop_list(stack);
 
