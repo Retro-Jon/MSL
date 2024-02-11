@@ -1,0 +1,53 @@
+Pushing to the Stack
+    - Elements are pushed to the stack as part of lists.
+    - If at least one list is present on the stack, elements can be appended to that list.
+
+Creating Lists
+    - Create a list with a pair of square brackets.
+    - When a list is pushed to the stack, the first item pushed is the opening sqaure bracket which marks the beginning of the list. This allows commands to know where a set of values end and when they're about to cross into another list.
+    - Usage
+        [1 2 3]
+        print-stack
+        # 0 : [
+        # 1 : 1
+        # 2 : 2
+        # 3 : 3
+
+Appending Lists
+    - Append elements to the top list on the stack by placing the new elements between a pair of curly brackets.
+    - Usage
+        [1 2 3]
+        {4 5 6}
+        print-stack
+        # 0 : [
+        # 1 : 1
+        # 2 : 2
+        # 3 : 3
+        # 4 : 4
+        # 5 : 5
+        # 6 : 6
+
+Dropping Lists
+    - To drop the top list from the stack, use the drop-list command.
+    - Usage
+        [1 2 3]
+        [4 5 6]
+        drop-list
+        print-stack
+        # 0 : [
+        # 1 : 1
+        # 2 : 2
+        # 3 : 3
+
+Dropping Elements
+    - To drop the last element of the top list on the stack, use the drop command.
+    - Usage
+        [1 2 3]
+        drop
+        print-stack
+        # 0 : [
+        # 1 : 1
+        # 2 : 2
+        # 3 : 3
+
+
