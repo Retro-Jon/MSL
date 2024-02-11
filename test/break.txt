@@ -1,0 +1,10 @@
+[<i> 0 10 1] for
+    [<i>] println
+
+    [<i> 3] == if
+        break
+    end
+end
+
+["END"] println
+

@@ -374,7 +374,6 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                 if (command == "print" || command == "println")
                 {
                     std::vector<Token> list = pop_list(stack);
-                    std::cout << "ListSize: " << list.size() << std::endl;
                     
                     for (Token t : reverse_list(list))
                     {
@@ -864,6 +863,16 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                         skip_end = true;
                         break;
                     }
+                } else if (command == "break")
+                {
+                    std::string target = std::any_cast<std::string>(current->alt_next->t.value);
+                    std::vector<Token> list = reverse_list(pop_list(stack));
+
+                    while (!list.empty() && list.back().type != TokenType::LOOP_BLOCK)
+                        list = reverse_list(pop_list(stack));
+
+                    current = current->alt_next->alt_next;
+                    break;
                 } else if (command == "exit")
                 {
                     current = nullptr;

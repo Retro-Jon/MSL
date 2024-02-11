@@ -108,6 +108,27 @@ bool parse(Node* nodes)
                     current->alt_next->alt_next = current;
                     node_stack.pop_back();
                 }
+                else if (val == "break")
+                {
+                    for (int i = node_stack.size() - 1; i >= 0; i--)
+                    {
+                        if (node_stack[i]->t.type != TokenType::COMMAND)
+                            continue;
+
+                        std::string tok = get_token_string(node_stack[i]->t);
+                        if (tok == "loop" || tok == "for" || tok == "while")
+                        {
+                            current->alt_next = node_stack[i];
+                            break;
+                        }
+                    }
+
+                    if (current->alt_next == nullptr)
+                    {
+                        error_msg(current, "Break can only be used inside a loop.");
+                        return false;
+                    }
+                }
                 break;
             }
 
