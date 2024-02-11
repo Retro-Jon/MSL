@@ -842,7 +842,9 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
 
                     current = std::any_cast<Node*>(list.front().value);
                     skip_end = true;
-                    push_list(stack, ret_list);
+                    
+                    if (!ret_list.empty())
+                        push_list(stack, ret_list);
                 } else if (command == "end")
                 {
                     std::string target = std::any_cast<std::string>(current->alt_next->t.value);

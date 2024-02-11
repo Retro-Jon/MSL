@@ -169,14 +169,69 @@ $
         $ (test) exit # Skips the test function call after cashing it and exits the program.
 
 return
-    - Return from the function being executed and return a list if one is provided.
+    - Return from the function being executed and return a list. If an empty list is provided, no list will be pushed to the stack.
+    - Usage
+        $ (test) defunc
+            ["A"] println
+            [] return
+            ["B"] println
+        end
+        [] (test)
+        # A
+
+        $ (math) defunc
+            + return
+            - return
+        end
+        [1 2 3] (math) println
+        # 6
 
 end
     - End a block of code.
+    - Usage
+        $ (test) defunc
+        end
+
+        [3] loop
+        end
+
+        [<i> 0 3 1] for
+        end
+
+        [True] while
+        end
+
+        [True] if
+        end
 
 break
     - Break out of a loop.
+    - Usage
+        [<i> 0 10 1] loop
+            [<i>] print
+            [<i> 3] == if
+                break
+            end
+        end
+        # 123
+
+swap
+    - Swap the last 2 elements of the top list on the stack.
+    - Usage
+        [1 2 3] swap print
+        # 132
+
+swap-list
+    - Swap the top 2 lists on the stack.
+    - Usage
+        [1 2 3] [4 5 6] swap-list print
+        # 456123
 
 exit
     - Stop the program's execution and exit.
+    - Usage
+        ["Exit"] println
+        exit
+        ["Test"] println
+        # Exit
 
