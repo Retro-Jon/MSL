@@ -13,7 +13,7 @@ Node* tokenize(const char* code)
 
     std::string code_string(code);
     code_string += "\n";
-    int line_count = 1;
+    int line_count = 0;
 
     for (char c : code_string)
     {

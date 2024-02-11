@@ -16,16 +16,13 @@ println
     - Usage
         ["HelloWorld!"] println
         # HelloWorld!
-        # 
 
         ["abc" "123"] println
         # abc
-        # 123
-
+        # 12
         [<a> "test"]
         [<a>] println
         # test
-        #
 
 input
     - Push a list containing the user's input.
@@ -72,48 +69,113 @@ get
         ["ichi" "ni" "san"]
         [2] get println
         # ni
-        #
 
         [<val> "a" "b" "c"]
         [<val>] at get println
         # a
-        #
 
 get-list
-    - Push a copy of the list starting with the provided tag.
+    - Push a copy of the list starting at a specific position on the stack and ending when the start of another list is found or another tag.
+    - Usage
+        [<a> 1 2 3]
+        [<a>] at get-list println
+        # 1
+        # 2
+        # 3
 
 merge
     - Concatenate the top two lists.
+    - Usage
+        [1 2 3] [4 5 6] merge println
+        # 1
+        # 2
+        # 3
+        # 4
+        # 5
+        # 6
 
 int
     - Convert the provided numbers to integers.
+    - Usage
+        [3.14] int println
+        # 3
 
 if
     - Execute the following block if the list provided is equal to [true].
+    - Usage
+        [true] if
+            ["True"] println
+        end
+        [false] if
+            ["False"] println
+        end
+        # True
 
 ?
     - Execute the following block if the command or operator before it, throws an exception.
+    - Usage
+        [2 "a"] + ?
+            print
+        end
+        # Value types do not agree.
 
 loop
     - Execute the following block a specific number of times.
+    - Usage
+        [3] loop
+            ["HelloWorld!"] println
+        end
+        # HelloWorld!
+        # HelloWorld!
+        # HelloWorld!
 
 while
     - Execute the following block while the last item in the provided list is true.
+    - Usage
+        [<t> true] loop
+            ["HelloWorld!"] println
+            [<t>] [false] =
+        end
+        # HelloWorld!
 
 for
     - Execute the following block while the count is not equal to the target number.
+    - Usage
+        [<i> 0 3 1] for
+            [<i>] println
+        end
+        # 1
+        # 2
+        # 3
 
 defunc
     - Use the cashed user function token to define the starting point of a function.
+    - Usage
+        $ (test) defunc
+            ["HelloWorld!"] println
+        end
+        [] (test)
+        # HelloWorld!
+
+        $ (out) defunc
+            print
+        end
+        ["A" "B" "C"] out
+        # ABC
 
 $
     - Cash the next token and skip to the one after it.
+    - Usage
+        $ (test) exit # Skips the test function call after cashing it and exits the program.
 
 return
     - Return from the function being executed and return a list if one is provided.
 
 end
     - End a block of code.
+
+break
+    - Break out of a loop.
 
 exit
     - Stop the program's execution and exit.

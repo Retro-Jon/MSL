@@ -1,8 +1,12 @@
 $ (my-func) defunc
     ["HelloWorld!"] println
-
-    return
 end
 
 [] (my-func)
+
+$ (add) defunc
+    + return
+end
+
+[1 2 3] (add) println
 

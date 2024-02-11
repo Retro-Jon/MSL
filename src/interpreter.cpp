@@ -814,28 +814,25 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
 
                     temp.value = current->t.value;
                     temp.type = current->t.type;
-                } else if (command == "return")
+                } else if (command == "return" || (command == "end" && std::any_cast<std::string>(current->alt_next->t.value) == "defunc"))
                 {
-                    std::vector<Token> list = reverse_list(pop_list(stack));
+                    std::vector<Token> ret_list = reverse_list(pop_list(stack));
+                    std::vector<Token> list;
                     int stage = 0;
 
                     while (!stack.empty())
                     {
+                        list = reverse_list(pop_list(stack));
+                        
                         if (list.empty())
-                        {
-                            list = reverse_list(pop_list(stack));
                             continue;
-                        }
 
                         if (stage == 0 && list.back().type == TokenType::FUNCTION_CALL)
                             stage = 1;
                         else if (stage == 1 && list.back().type == TokenType::ADDRESS)
                             break;
-
-                        list = reverse_list(pop_list(stack));
                     }
 
-                    print_list(stack);
                     if (list.back().type != TokenType::ADDRESS)
                     {
                         exception = true;
@@ -845,6 +842,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
 
                     current = std::any_cast<Node*>(list.front().value);
                     skip_end = true;
+                    push_list(stack, ret_list);
                 } else if (command == "end")
                 {
                     std::string target = std::any_cast<std::string>(current->alt_next->t.value);
@@ -872,6 +870,24 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                         list = reverse_list(pop_list(stack));
 
                     current = current->alt_next->alt_next;
+                    break;
+                } else if (command == "swap")
+                {
+                    std::vector<Token> list = reverse_list(pop_list(stack));
+                    Token a = list.back();
+                    list.pop_back();
+                    Token b = list.back();
+                    list.pop_back();
+                    list.push_back(a);
+                    list.push_back(b);
+
+                    push_list(stack, list);
+                } else if (command == "swap-list")
+                {
+                    std::vector<Token> list_a = reverse_list(pop_list(stack));
+                    std::vector<Token> list_b = reverse_list(pop_list(stack));
+                    push_list(stack, list_a);
+                    push_list(stack, list_b);
                     break;
                 } else if (command == "exit")
                 {
@@ -910,6 +926,9 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
 
         if (exception == true)
         {
+            if (current->default_next == nullptr)
+                break;
+
             if (current->default_next->t.type == TokenType::COMMAND)
             {
                 if (std::any_cast<std::string>(current->default_next->t.value) == "?")
