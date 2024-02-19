@@ -1,5 +1,6 @@
 #include "lang.hpp"
 #include <iostream>
+#include <chrono>
 
 int main(int argc, char** argv)
 {
@@ -7,6 +8,7 @@ int main(int argc, char** argv)
     {
         std::string code = load_file(argv[1]);
         std::vector<Token> stack;
+        auto start = std::chrono::high_resolution_clock::now();
     
         Node* program = tokenize(code.c_str());
         if (lex(program))
@@ -14,6 +16,12 @@ int main(int argc, char** argv)
                 interpret(program, stack);
         
         delete_nodes(program);
+
+        auto stop = std::chrono::high_resolution_clock::now();
+
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+        std::cout << "\nExecution time: " << duration.count() << " microseconds" << std::endl;
     }
     else if (argc == 1)
     {

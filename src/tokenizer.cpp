@@ -13,7 +13,7 @@ Node* tokenize(const char* code)
 
     std::string code_string(code);
     code_string += "\n";
-    int line_count = 0;
+    int line_count = 1;
 
     for (char c : code_string)
     {
@@ -43,7 +43,7 @@ Node* tokenize(const char* code)
                 if (current != "")
                 {
                     Node* n_node = new Node();
-                    n_node->line = line_count;
+                    n_node->line = c == '\n' ? line_count - 1 : line_count;
                     n_node->t.value = current;
                     pointer->default_next = n_node;
                     pointer = pointer->default_next;
@@ -55,7 +55,7 @@ Node* tokenize(const char* code)
                 continue;
 
             Node* n_node = new Node();
-            n_node->line = line_count;
+            n_node->line = c == '\n' ? line_count - 1 : line_count;
             n_node->t.value = current;
             pointer->default_next = n_node;
             pointer = pointer->default_next;

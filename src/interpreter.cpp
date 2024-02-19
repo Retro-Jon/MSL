@@ -14,6 +14,8 @@ std::vector<Token> reverse_list(std::vector<Token> list)
 
 void print_list(std::vector<Token> list)
 {
+    std::cout << "Count " << list.size() << std::endl;
+
     if (list.empty())
         return;
 
@@ -546,7 +548,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                         push_list(stack, {t_type});
                     } else
                         push_list(stack, {stack.at(std::any_cast<float>(tag.front().value))});
-                } else if (command == "get-list")
+                } else if (command == "get-list" || command == "get-list-values")
 				{
                     std::vector<Token> tag = pop_list(stack);
 
@@ -555,9 +557,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                         exception = true;
                         exception_message = "Expected a single integer value.";
                         break;
-        	        }
-
-                    int pos = 0;
+        	        } int pos = 0;
                     
                     try
                     {
@@ -572,9 +572,12 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
 
                     for (int i = pos; i < stack.size() - 1; i++)
                     {
-                        if (!is_value(stack.at(i)))
+                        if (stack.at(i).type == TokenType::LIST_START)
                             break;
 
+                        if (command == "get-list-values" && is_tag(stack.at(i)))
+                            continue;
+                        
                         append_list(stack, {stack.at(i)});
                     }
 				} else if (command == "merge")
@@ -615,12 +618,12 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                         {
                             current = current->alt_next;
                             skip_end = true;
-                            
-                            Token block;
-                            block.type = TokenType::CONDITION_BLOCK;
-                            block.value = TokenTypeString[TokenType::CONDITION_BLOCK];
-                            push_list(stack, {block});
                         }
+                        
+                        Token block;
+                        block.type = TokenType::CONDITION_BLOCK;
+                        block.value = TokenTypeString[TokenType::CONDITION_BLOCK];
+                        push_list(stack, {block});
                     } else {
                         if (!exception)
                         {
@@ -848,7 +851,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                 } else if (command == "end")
                 {
                     std::string target = std::any_cast<std::string>(current->alt_next->t.value);
-                    std::vector<Token> list = reverse_list(pop_list(stack));
+                    std::vector<Token> list = pop_list(stack);
 
                     if (target == "if" || target == "?")
                     {
@@ -858,7 +861,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                     {
                         while (!list.empty() && list.back().type != TokenType::LOOP_BLOCK)
                             list = reverse_list(pop_list(stack));
-                        
+
                         current = current->alt_next;
                         skip_end = true;
                         break;
