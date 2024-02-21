@@ -94,8 +94,9 @@ std::string trim_num_string(std::string num)
 {
     std::string res = "";
 
-    int i = num.length() - 1;
-    for (i; i > 0; i--)
+    int end = num.length() - 1;
+
+    for (int i = end; i > 0; i--)
     {
         if (num.at(i) == '0')
             continue;
@@ -107,7 +108,7 @@ std::string trim_num_string(std::string num)
         break;
     }
 
-    for (int j = 0; j <= i; j++)
+    for (int j = 0; j <= end; j++)
         res += num.at(j);
 
     return res;

@@ -1,5 +1,4 @@
 #include "lang.hpp"
-#include <iostream>
 
 Node* tokenize(const char* code)
 {

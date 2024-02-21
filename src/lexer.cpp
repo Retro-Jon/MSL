@@ -1,5 +1,4 @@
 #include "lang.hpp"
-#include <iostream>
 #include <set>
 
 const std::set<std::string> operators = {
@@ -147,15 +146,17 @@ bool lex(Node* nodes)
             case TokenType::DATA_Bool:
             {
                 if (val == "true")
-                    pointer->t.value = std::any_cast<bool>(true);
+                    pointer->t.value = true;
                 else if (val == "false")
-                    pointer->t.value = std::any_cast<bool>(false);
+                    pointer->t.value = false;
                 else
                 {
                     error_msg(pointer, "Unknown boolean value.");
                     return false;
                 }
             }
+            default:
+                break;
         }
         
         pointer = pointer->default_next;

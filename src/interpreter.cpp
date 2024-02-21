@@ -145,7 +145,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                     {
                         exception = true;
                         exception_message = "Mismatched Types";
-                        return std::any_cast<bool>(false);
+                        return false;
                     }
                     if (a.type == TokenType::DATA_Bool)
                         return std::any_cast<bool>(a.value) == std::any_cast<bool>(b.value);
@@ -214,7 +214,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
 
                         try
                         {
-                            std::any_cast<float>(val.value);
+                            static_cast<void>(std::any_cast<float>(val.value));
                         } catch (std::exception& e)
                         {
                             exception = true;
@@ -927,6 +927,8 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                 current = functions.at(command);
                 break;
             }
+            default:
+                break;
         }
 
         if (exception == true)

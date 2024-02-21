@@ -1,6 +1,5 @@
 #include "lang.hpp"
 #include <vector>
-#include <iostream>
 
 bool parse(Node* nodes)
 {
@@ -140,6 +139,8 @@ bool parse(Node* nodes)
                     return false;
                 }
             }
+            default:
+                break;
         }
 
         current = current->default_next;
