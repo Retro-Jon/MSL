@@ -1,0 +1,5 @@
+$ _a_ ["test A"] declare
+$ _b_ [123] declare
+
+[_a_ _b_] println
+

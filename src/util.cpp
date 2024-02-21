@@ -48,6 +48,7 @@ std::string get_token_string(Token t)
         case TokenType::COMMAND:
         case TokenType::USER_FUNCTION:
         case TokenType::DATA_String:
+        case TokenType::CONSTANT:
             result = std::any_cast<std::string>(t.value);
             break;
 
@@ -105,6 +106,8 @@ std::string trim_num_string(std::string num)
             i--;
         
         // Break if 0 is not found at the current position.
+
+        end = i;
         break;
     }
 

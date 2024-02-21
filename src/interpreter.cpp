@@ -1,4 +1,5 @@
 #include "lang.hpp"
+#include <any>
 #include <iostream>
 #include <map>
 
@@ -79,6 +80,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
     bool exception = false;
     std::string exception_message = "";
     std::map<std::string, Node*> functions;
+    std::map<std::string, Token> constants;
 
     current = program;
 
@@ -125,15 +127,27 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
             case TokenType::DATA_Char:
             case TokenType::DATA_Number:
             case TokenType::DATA_Bool:
+            case TokenType::CONSTANT:
             {
                 if (in_list == false)
                 {
                     exception = true;
                     exception_message = "Stray value.\nValues must be pushed to the stack as part of a list.";
                     break;
-                } else
-                    stack.push_back(current->t);
-                
+                } else {
+                    if (current->t.type == TokenType::CONSTANT)
+                    {
+                        if (constants.count(get_token_string(current->t)) == 0)
+                        {
+                            exception = true;
+                            exception_message = "Undefined constant.\nConstants must be defined before being used.";
+                            break;
+                        }
+                        stack.push_back(constants.at(get_token_string(current->t)));
+                    } else {
+                        stack.push_back(current->t);
+                    }
+                }
                 break;
             }
 
@@ -893,6 +907,27 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                     std::vector<Token> list_b = reverse_list(pop_list(stack));
                     push_list(stack, list_a);
                     push_list(stack, list_b);
+                    break;
+                } else if (command == "declare")
+                {
+                    if (temp.type != TokenType::CONSTANT)
+                    {
+                        exception = true;
+                        exception_message = "Constant identifier not provided";
+                        break;
+                    }
+
+                    if (constants.count(std::any_cast<std::string>(temp.value)) > 0)
+                    {
+                        exception = true;
+                        exception_message = "Constant already exists.";
+                        break;
+                    }
+
+                    std::vector<Token> val = pop_list(stack);
+                    constants.insert({std::any_cast<std::string>(temp.value), val.back()});
+                    temp.type = TokenType::NULL_TOKEN;
+
                     break;
                 } else if (command == "exit")
                 {

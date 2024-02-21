@@ -32,6 +32,10 @@ bool lex(Node* nodes)
                 if (val.back() == ')')
                     pointer->t.type = TokenType::USER_FUNCTION;
                 break;
+            case '_':
+                if (val.back() == '_')
+                    pointer->t.type = TokenType::CONSTANT;
+                break;
             default:
                 break;
         }
