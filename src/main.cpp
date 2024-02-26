@@ -6,6 +6,11 @@ int main(int argc, char** argv)
 {
     if (argc == 2)
     {
+        std::string program_path = argv[1];
+
+        while (program_path.at(program_path.size() - 1) != '/' && program_path.at(program_path.size() - 1) != '\\')
+            program_path.erase(program_path.size() - 1, 1);
+
         std::string code = load_file(argv[1]);
         std::vector<Token> stack;
         auto start = std::chrono::high_resolution_clock::now();
@@ -13,7 +18,7 @@ int main(int argc, char** argv)
         Node* program = tokenize(code.c_str());
         if (lex(program))
             if (parse(program))
-                interpret(program, stack);
+                interpret(program_path, program, stack);
         
         delete_nodes(program);
 
@@ -25,6 +30,11 @@ int main(int argc, char** argv)
     }
     else if (argc == 1)
     {
+        std::string program_path = argv[0];
+
+        while (program_path.at(program_path.size() - 1) != '/' && program_path.at(program_path.size() - 1) != '\\')
+            program_path.erase(program_path.size() - 1, 1);
+
         std::vector<Token> stack;
         std::cout << "REPL Mode" << std::endl;
         std::string input;
@@ -37,7 +47,7 @@ int main(int argc, char** argv)
             Node* program = tokenize(input.c_str());
             if (lex(program))
                 if (parse(program))
-                    interpret(program, stack);
+                    interpret(program_path, program, stack);
 
             delete_nodes(program);
         }

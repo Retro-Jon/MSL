@@ -1,5 +1,7 @@
 #include "lang.hpp"
+#include <algorithm>
 #include <any>
+#include <chrono>
 #include <iostream>
 #include <map>
 
@@ -74,7 +76,7 @@ Token get_tag(std::vector<Token> list, Token tag)
     return tag;
 }
 
-bool interpret(Node* program, std::vector<Token> &backup_stack)
+bool interpret(std::string program_path, Node* program, std::vector<Token> &backup_stack)
 {
     Node* current = program;
     bool exception = false;
@@ -85,6 +87,7 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
     current = program;
 
     std::vector<Token> stack;
+    std::vector<std::string> includes;
 
     for (Token t : backup_stack)
         stack.push_back(t);
@@ -929,6 +932,78 @@ bool interpret(Node* program, std::vector<Token> &backup_stack)
                     temp.type = TokenType::NULL_TOKEN;
 
                     break;
+                } else if (command == "include")
+                {
+                    std::vector<Token> file_list = reverse_list(pop_list(stack));
+
+                    if (file_list.empty())
+                    {
+                        exception = true;
+                        exception_message = "No file path provided.";
+                        break;
+                    }
+
+                    std::string new_code = "";
+
+                    // Load files
+                    for (Token f : file_list)
+                    {
+                        if (f.type != TokenType::DATA_String)
+                        {
+                            exception = true;
+                            exception_message = "Expected a string.";
+                            break;
+                        }
+
+                        if (std::find(includes.begin(), includes.end(), get_token_string(f)) != includes.end())
+                            continue;
+
+                        includes.push_back(get_token_string(f));
+
+                        std::string file_path = program_path + get_token_string(f);
+                        std::string file_content = load_file(file_path.c_str());
+                        
+                        if (file_content.empty())
+                        {
+                            exception = true;
+                            exception_message = "Could not load file: " + get_token_string(f);
+                            break;
+                        }
+
+                        new_code += file_content + "\n";
+                    }
+
+                    // Break if at least one item is not a valid string.
+                    if (exception)
+                        break;
+
+                    Node* new_nodes = tokenize(new_code.c_str());
+
+                    if (!lex(new_nodes))
+                    {
+                        exception = true;
+                        exception_message = "Lexical analysis failed.";
+                        break;
+                    }
+
+                    if (!parse(new_nodes))
+                    {
+                        exception = true;
+                        exception_message = "Parsing failed.";
+                        break;
+                    }
+
+                    Node* next_half = current->default_next;
+                    current->default_next = new_nodes;
+
+                    Node* last_node = current;
+
+                    while (last_node->default_next != nullptr)
+                    {
+                        last_node = last_node->default_next;
+                    }
+
+                    last_node->default_next = next_half;
                 } else if (command == "exit")
                 {
                     current = nullptr;

@@ -67,7 +67,7 @@ const std::string TokenTypeString[] = {
 Node* tokenize(const char* code);
 bool lex(Node* Nodes);
 bool parse(Node* Nodes);
-bool interpret(Node* program, std::vector<Token> &backup_stack);
+bool interpret(std::string program_path, Node* program, std::vector<Token> &backup_stack);
 
 std::string load_file(const char* path);
 void delete_nodes(Node* pointer);

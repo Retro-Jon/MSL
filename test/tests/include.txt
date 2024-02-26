@@ -1,0 +1,6 @@
+["functions.txt"] include
+
+["Includes end."] println
+
+[242 352] (add) println
+
