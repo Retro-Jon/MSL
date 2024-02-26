@@ -1,13 +1,15 @@
-[<bottles> 100]
+$ _bottles_ [100] declare
 
-[<count> <bottles> 2 -1] for
-    [<count> " bottles of beer on the wall!\n"] print
-    [<count> " bottles of beer.\n"] print
-    ["Take one down, pass it around."] println
+[<count> _bottles_ 2 -1] for
+    [<count> " bottles of beer on the wall!\n"
+    <count> " bottles of beer.\n"
+    "Take one down, pass it around.\n"] print
 
-    [<count> 2] > if
-        [<count> 1] - {" bottles of beer on the wall!\n\n"} print
+    [<count> 2] == if
+        break
     end
+
+    [<count> 1] - {" bottles of beer on the wall!\n\n"} print
 end
 
 ["1 more bottle of beer on the wall!\n"
@@ -15,3 +17,4 @@ end
 "1 more bottle of beer."
 "Take it down, pass it around."
 "No more bottles of beer on the wall!"] println
+
