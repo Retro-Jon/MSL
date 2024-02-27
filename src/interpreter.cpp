@@ -911,7 +911,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     push_list(stack, list_a);
                     push_list(stack, list_b);
                     break;
-                } else if (command == "declare")
+                } else if (command == "define")
                 {
                     if (temp.type != TokenType::CONSTANT)
                     {

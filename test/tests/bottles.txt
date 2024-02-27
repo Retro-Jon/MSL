@@ -1,4 +1,4 @@
-$ _bottles_ [100] declare
+$ _bottles_ [100] define
 
 [<count> _bottles_ 2 -1] for
     [<count> " bottles of beer on the wall!\n"
