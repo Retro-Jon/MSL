@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
-        std::cout << "\nExecution time: " << duration.count() << " microseconds" << std::endl;
+//        std::cout << "\nExecution time: " << duration.count() << " microseconds" << std::endl;
     }
     else if (argc == 1)
     {

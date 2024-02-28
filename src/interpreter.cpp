@@ -78,6 +78,7 @@ Token get_tag(std::vector<Token> list, Token tag)
 
 bool interpret(std::string program_path, Node* program, std::vector<Token> &backup_stack)
 {
+    auto start = std::chrono::high_resolution_clock::now();
     Node* current = program;
     bool exception = false;
     std::string exception_message = "";
@@ -1061,6 +1062,12 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
         if (!skip_end)
             current = current->default_next;
     }
+    
+    auto stop = std::chrono::high_resolution_clock::now();
+    
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+    std::cout << "\nExecution time: " << duration.count() / 1000.0f << " milliseconds" << std::endl;
 
     if (exception == true)
     {
