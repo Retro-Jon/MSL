@@ -12,6 +12,7 @@ enum TokenType
     DATA_Bool,
     TAG_GLOBAL,
     TAG_LOCAL,
+    TAG_BLOCK,
     TAG_MEMBER,
     LIST_START,
     LIST_END,
@@ -22,6 +23,7 @@ enum TokenType
     CONSTANT,
     CONDITION_BLOCK,
     LOOP_BLOCK,
+    BLOCK,
     COMMAND,
     OPERATOR,
     ADDRESS
@@ -49,6 +51,7 @@ const std::string TokenTypeString[] = {
     "DATA_Bool",
     "TAG_GLOBAL",
     "TAG_LOCAL",
+    "TAG_BLOCK",
     "TAG_MEMBER",
     "LIST_START",
     "LIST_END",
@@ -59,6 +62,7 @@ const std::string TokenTypeString[] = {
     "CONSTANT",
     "CONDITION_BLOCK",
     "LOOP_BLOCK",
+    "BLOCK",
     "COMMAND",
     "OPERATOR",
     "ADDRESS"

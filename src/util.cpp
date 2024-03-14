@@ -43,6 +43,7 @@ std::string get_token_string(Token t)
         
         case TokenType::TAG_GLOBAL:
         case TokenType::TAG_LOCAL:
+        case TokenType::TAG_BLOCK:
         case TokenType::TAG_MEMBER:
         case TokenType::OPERATOR:
         case TokenType::COMMAND:
@@ -162,6 +163,31 @@ int find_tag(std::vector<Token> list, Token tag)
                 break;
             }
         }
+    } else if (tag.type == TokenType::TAG_BLOCK)
+    {
+        for (int i = list.size() - 1; i >= 0; i--)
+        {
+            if (list.at(i).type == TokenType::LOOP_BLOCK || list.at(i).type == TokenType::CONDITION_BLOCK || list.at(i).type == TokenType::BLOCK)
+            {
+                pos = i;
+                break;
+            }
+        }
+
+        if (pos < 0)
+            return pos;
+
+        for (int i = pos; i < list.size() - 1; i++)
+        {
+            if (list.at(i).type != tag.type)
+                continue;
+            
+            if (std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
+            {
+                pos = i;
+                break;
+            }
+        }
     } else if (tag.type == TokenType::TAG_MEMBER)
     {
         for (int i = list.size() - 1; i >= 0; i--)
@@ -191,7 +217,7 @@ int find_tag(std::vector<Token> list, Token tag)
 
 bool is_tag(Token t)
 {
-    if (t.type == TokenType::TAG_GLOBAL || t.type == TokenType::TAG_LOCAL || t.type == TokenType::TAG_MEMBER)
+    if (t.type == TokenType::TAG_GLOBAL || t.type == TokenType::TAG_LOCAL || t.type == TokenType::TAG_BLOCK || t.type == TokenType::TAG_MEMBER)
         return true;
 
     return false;

@@ -58,6 +58,8 @@ bool lex(Node* nodes)
                     pointer->t.type = TokenType::TAG_LOCAL;
                 else if (val.find("<.") != std::string::npos)
                     pointer->t.type = TokenType::TAG_MEMBER;
+                else if (val.find("<!") != std::string::npos)
+                    pointer->t.type = TokenType::TAG_BLOCK;
                 else if (val.find("<") != std::string::npos)
                     pointer->t.type = TokenType::TAG_GLOBAL;
                 else

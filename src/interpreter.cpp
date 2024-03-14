@@ -69,7 +69,7 @@ Token get_tag(std::vector<Token> list, Token tag)
     if (is_tag(tag))
     {
         int pos = find_tag(list, tag);
-        if (pos >= 0 && pos < list.size())
+        if (pos >= 0 && pos < list.size() - 1)
             return list.at(pos + 1);
     }
 
@@ -126,6 +126,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
             
             case TokenType::TAG_GLOBAL:
             case TokenType::TAG_LOCAL:
+            case TokenType::TAG_BLOCK:
             case TokenType::TAG_MEMBER:
             case TokenType::DATA_String:
             case TokenType::DATA_Char:
@@ -661,7 +662,12 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                             push_list(stack, {e_msg});
                         }
                     }
-
+                } else if (command == "begin")
+                {
+                    Token block;
+                    block.type = TokenType::BLOCK;
+                    block.value = TokenTypeString[TokenType::BLOCK];
+                    push_list(stack, {block});
                 } else if (command == "loop")
                 {
                     std::vector<Token> list = pop_list(stack);
@@ -874,6 +880,10 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     if (target == "if" || target == "?")
                     {
                         while (!list.empty() && list.back().type != TokenType::CONDITION_BLOCK)
+                            list = reverse_list(pop_list(stack));
+                    } else if (target == "begin")
+                    {
+                        while (!list.empty() && list.back().type != TokenType::BLOCK)
                             list = reverse_list(pop_list(stack));
                     } else if (target == "loop" || target == "while" || target == "for")
                     {

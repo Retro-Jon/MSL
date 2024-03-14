@@ -16,3 +16,8 @@ end
 [<a>] at [] (func) =
 [<a>] println
 
+begin
+    [<!asdf> "Hello World!"]
+    [<!asdf>] println
+end
+
