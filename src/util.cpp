@@ -1,4 +1,5 @@
 #include "lang.hpp"
+#include <any>
 #include <iostream>
 #include <fstream>
 
@@ -125,91 +126,62 @@ int find_tag(std::vector<Token> list, Token tag)
 
     int pos = -1;
 
-    if (tag.type == TokenType::TAG_GLOBAL)
+    switch (tag.type)
     {
-        for (int i = 0; i < list.size() - 1; i++)
+        case TokenType::TAG_GLOBAL:
         {
-            if (list.at(i).type != tag.type)
-                continue;
-            
-            if (std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
+            for (int i = 0; i < list.size() - 1; i++)
             {
-                pos = i;
-                break;
+                if (list.at(i).type != tag.type)
+                    continue;
+                
+                if (std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
+                {
+                    pos = i;
+                    break;
+                }
             }
+            break;
         }
-    } else if (tag.type == TokenType::TAG_LOCAL)
-    {
-        for (int i = list.size() - 1; i >= 0; i--)
+    
+        case TokenType::TAG_LOCAL:
         {
-            if (list.at(i).type == TokenType::FUNCTION_CALL)
+            for (int i = list.size() - 1; i >= 0; i--)
             {
-                pos = i;
-                break;
+                if (list.at(i).type == TokenType::FUNCTION_CALL)
+                    break;
+                if (list.at(i).type == TokenType::TAG_LOCAL && std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
+                    pos = i;
             }
-        }
-
-        if (pos < 0)
-            return pos;
-
-        for (int i = pos; i < list.size() - 1; i++)
-        {
-            if (list.at(i).type != tag.type)
-                continue;
-            
-            if (std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
-            {
-                pos = i;
-                break;
-            }
-        }
-    } else if (tag.type == TokenType::TAG_BLOCK)
-    {
-        for (int i = list.size() - 1; i >= 0; i--)
-        {
-            if (list.at(i).type == TokenType::LOOP_BLOCK || list.at(i).type == TokenType::CONDITION_BLOCK || list.at(i).type == TokenType::BLOCK)
-            {
-                pos = i;
-                break;
-            }
+            break;
         }
 
-        if (pos < 0)
-            return pos;
-
-        for (int i = pos; i < list.size() - 1; i++)
+        case TokenType::TAG_BLOCK:
         {
-            if (list.at(i).type != tag.type)
-                continue;
-            
-            if (std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
+            for (int i = list.size() - 1; i >= 0; i--)
             {
-                pos = i;
-                break;
+                if (list.at(i).type == TokenType::LOOP_BLOCK || list.at(i).type == TokenType::CONDITION_BLOCK || list.at(i).type == TokenType::BLOCK)
+                    break;
+                if (list.at(i).type == TokenType::TAG_BLOCK && std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
+                    pos = i;
             }
+            break;
         }
-    } else if (tag.type == TokenType::TAG_MEMBER)
-    {
-        for (int i = list.size() - 1; i >= 0; i--)
+    
+        case TokenType::TAG_MEMBER:
         {
-            if (list.at(i).type == TokenType::LIST_START)
+            for (int i = list.size() - 1; i >= 0; i--)
             {
-                pos = i;
-                break;
+                if (list.at(i).type == TokenType::LIST_START)
+                    break;
+                if (list.at(i).type == TokenType::TAG_MEMBER && std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
+                    pos = i;
             }
+            break;
         }
-
-        for (int i = pos; i < list.size() - 1; i++)
-        {
-            if (list.at(i).type != tag.type)
-                continue;
-            
-            if (std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
-            {
-                pos = i;
-                break;
-            }
-        }
+        
+        default:
+            break;
     }
 
     return pos;
