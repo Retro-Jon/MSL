@@ -210,6 +210,13 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         pos += std::any_cast<float>(destination.front().value);
                     }
 
+                    if (pos >= stack.size())
+                    {
+                        exception = true;
+                        exception_message = "Position not on stack";
+                        break;
+                    }
+
                     stack.at(pos) = values.front();
                 } else if (command == "+" || command == "-" || command == "*" || command == "/")
                 {
@@ -410,7 +417,10 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         if (command == "println")
                             std::cout << std::endl;
                     }
-                } else if (command == "input")
+                    break;
+                }
+
+                if (command == "input")
                 {
                     std::string val;
                     std::getline(std::cin, val);
@@ -434,16 +444,28 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     }
 
                     push_list(stack, {t});
-                } else if (command == "print-stack")
+                    break;
+                }
+
+                if (command == "print-stack")
                 {
                     print_list(stack);
-                } else if (command == "drop")
+                    break;
+                }
+
+                if (command == "drop")
                 {
                     stack.pop_back();
-                } else if (command == "drop-list")
+                    break;
+                }
+
+                if (command == "drop-list")
                 {
                     pop_list(stack);
-                } else if (command == "at")
+                    break;
+                }
+
+                if (command == "at")
                 {
                     std::vector<Token> list = reverse_list(pop_list(stack));
                     // GLOBAL_TAG | LOCAL_TAG | MEMBER_TAG | DATA_String
@@ -541,7 +563,10 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     }
 
                     push_list(stack, {res});
-                } else if (command == "get")
+                    break;
+                }
+
+                if (command == "get")
                 {
                     std::vector<Token> tag = pop_list(stack);
 
@@ -567,7 +592,11 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         push_list(stack, {t_type});
                     } else
                         push_list(stack, {stack.at(std::any_cast<float>(tag.front().value))});
-                } else if (command == "get-list" || command == "get-list-values")
+
+                    break;
+                }
+
+                if (command == "get-list" || command == "get-list-values")
 				{
                     std::vector<Token> tag = pop_list(stack);
 
@@ -599,10 +628,16 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         
                         append_list(stack, {stack.at(i)});
                     }
-				} else if (command == "merge")
+                    break;
+				}
+
+                if (command == "merge")
                 {
 				    append_list(stack, reverse_list(pop_list(stack)));
-                } else if (command == "int")
+                    break;
+                }
+
+                if (command == "int")
                 {
                     std::vector<Token> values = pop_list(stack);
 
@@ -613,7 +648,10 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     }
 
                     push_list(stack, reverse_list(values));
-                } else if (command == "if" || command == "?")
+                    break;
+                }
+
+                if (command == "if" || command == "?")
                 {
                     if (command == "if")
                     {
@@ -662,13 +700,19 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                             push_list(stack, {e_msg});
                         }
                     }
-                } else if (command == "begin")
+                    break;
+                }
+
+                if (command == "begin")
                 {
                     Token block;
                     block.type = TokenType::BLOCK;
                     block.value = TokenTypeString[TokenType::BLOCK];
                     push_list(stack, {block});
-                } else if (command == "loop")
+                    break;
+                }
+
+                if (command == "loop")
                 {
                     std::vector<Token> list = pop_list(stack);
 
@@ -704,7 +748,10 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     block.type = TokenType::LOOP_BLOCK;
                     block.value = TokenTypeString[TokenType::LOOP_BLOCK];
                     push_list(stack, {block});
-                } else if (command == "while")
+                    break;
+                }
+
+                if (command == "while")
                 {
                     std::vector<Token> list = pop_list(stack);
 
@@ -729,7 +776,10 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     block.type = TokenType::LOOP_BLOCK;
                     block.value = TokenTypeString[TokenType::LOOP_BLOCK];
                     push_list(stack, {block});
-                } else if (command == "for")
+                    break;
+                }
+
+                if (command == "for")
                 {
                     std::vector<Token> list = reverse_list(pop_list(stack));
 
@@ -809,7 +859,10 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         push_list(stack, {current_val, end_val, step});
 
                     push_list(stack, {block});
-                } else if (command == "defunc")
+                    break;
+                }
+
+                if (command == "defunc")
                 {
                     if (temp.type != TokenType::USER_FUNCTION)
                     {
@@ -828,7 +881,10 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     functions.insert({std::any_cast<std::string>(temp.value), current});
                     temp.type = TokenType::NULL_TOKEN;
                     current = current->alt_next;
-                } else if (command == "$")
+                    break;
+                }
+
+                if (command == "$")
                 {
                     current = current->default_next;
 
@@ -841,7 +897,10 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
 
                     temp.value = current->t.value;
                     temp.type = current->t.type;
-                } else if (command == "return" || (command == "end" && std::any_cast<std::string>(current->alt_next->t.value) == "defunc"))
+                    break;
+                }
+
+                if (command == "return" || (command == "end" && std::any_cast<std::string>(current->alt_next->t.value) == "defunc"))
                 {
                     std::vector<Token> ret_list = reverse_list(pop_list(stack));
                     std::vector<Token> list;
@@ -872,7 +931,11 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     
                     if (!ret_list.empty())
                         push_list(stack, ret_list);
-                } else if (command == "end")
+
+                    break;
+                }
+
+                if (command == "end")
                 {
                     std::string target = std::any_cast<std::string>(current->alt_next->t.value);
                     std::vector<Token> list = pop_list(stack);
@@ -894,7 +957,10 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         skip_end = true;
                         break;
                     }
-                } else if (command == "break")
+                    break;
+                }
+
+                if (command == "break")
                 {
                     std::string target = std::any_cast<std::string>(current->alt_next->t.value);
                     std::vector<Token> list = reverse_list(pop_list(stack));
@@ -904,7 +970,9 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
 
                     current = current->alt_next->alt_next;
                     break;
-                } else if (command == "swap")
+                }
+
+                if (command == "swap")
                 {
                     std::vector<Token> list = reverse_list(pop_list(stack));
                     Token a = list.back();
@@ -915,14 +983,19 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     list.push_back(b);
 
                     push_list(stack, list);
-                } else if (command == "swap-list")
+                    break;
+                }
+
+                if (command == "swap-list")
                 {
                     std::vector<Token> list_a = reverse_list(pop_list(stack));
                     std::vector<Token> list_b = reverse_list(pop_list(stack));
                     push_list(stack, list_a);
                     push_list(stack, list_b);
                     break;
-                } else if (command == "define")
+                }
+
+                if (command == "define")
                 {
                     if (temp.type != TokenType::CONSTANT)
                     {
@@ -943,7 +1016,9 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     temp.type = TokenType::NULL_TOKEN;
 
                     break;
-                } else if (command == "include")
+                }
+
+                if (command == "include")
                 {
                     std::vector<Token> file_list = reverse_list(pop_list(stack));
 
@@ -1015,7 +1090,10 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     }
 
                     last_node->default_next = next_half;
-                } else if (command == "exit")
+                    break;
+                }
+
+                if (command == "exit")
                 {
                     current = nullptr;
                     skip_end = true;

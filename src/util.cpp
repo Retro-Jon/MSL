@@ -124,8 +124,6 @@ int find_tag(std::vector<Token> list, Token tag)
     if (list.size() == 0)
         return -1;
 
-    int pos = -1;
-
     switch (tag.type)
     {
         case TokenType::TAG_GLOBAL:
@@ -136,10 +134,7 @@ int find_tag(std::vector<Token> list, Token tag)
                     continue;
                 
                 if (std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
-                {
-                    pos = i;
-                    break;
-                }
+                    return i;
             }
             break;
         }
@@ -150,21 +145,27 @@ int find_tag(std::vector<Token> list, Token tag)
             {
                 if (list.at(i).type == TokenType::FUNCTION_CALL)
                     break;
-                if (list.at(i).type == TokenType::TAG_LOCAL && std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
-                    pos = i;
+                if (list.at(i).type != tag.type)
+                    continue;
+                if (std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
+                    return i;
             }
             break;
         }
 
         case TokenType::TAG_BLOCK:
         {
+            int pos = -1;
             for (int i = list.size() - 1; i >= 0; i--)
             {
                 if (list.at(i).type == TokenType::LOOP_BLOCK || list.at(i).type == TokenType::CONDITION_BLOCK || list.at(i).type == TokenType::BLOCK)
                     break;
-                if (list.at(i).type == TokenType::TAG_BLOCK && std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
+                if (list.at(i).type != tag.type)
+                    continue;
+                if (std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
                     pos = i;
             }
+            return pos;
             break;
         }
     
@@ -174,17 +175,19 @@ int find_tag(std::vector<Token> list, Token tag)
             {
                 if (list.at(i).type == TokenType::LIST_START)
                     break;
-                if (list.at(i).type == TokenType::TAG_MEMBER && std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
-                    pos = i;
+                if (list.at(i).type != tag.type)
+                    continue;
+                if (std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
+                    return i;
             }
             break;
         }
-        
+
         default:
             break;
     }
 
-    return pos;
+    return -1;
 }
 
 bool is_tag(Token t)

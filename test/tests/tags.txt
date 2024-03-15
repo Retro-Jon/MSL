@@ -3,13 +3,13 @@
 
 $ (func) defunc
     # Local tag
-    [<..l> 0]
+    [<..val> 0]
 
     # <..l> = 2
     # Member tag
-    [<..l>] [<.x> 1 <.y> 2 <.z> 3] [<.y>] at get swap-list drop-list =
-
-    [<..l>] at get return
+    [<..val>] [<.x> 1 <.y> 2 <.z> 3] [<.y>] at get swap-list drop-list = 
+    
+    [<..val>] at get return
 end
 
 # <a> = 2
