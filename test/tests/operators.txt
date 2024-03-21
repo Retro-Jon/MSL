@@ -10,19 +10,12 @@
 
 # Concatination
 
-begin
-    [<!b> "\nAgain."]
-    ["Hello" "World!" <!b>] println
-end
+["Hello" "World!" "\nAgain."] + println
 
 # Math with offsets
 
 [<c> 1 2 3]
-
-begin
-    [<!d> 2]
-    [<c> <!d>] at [<c>] at get-list + =
-end
+[<c> 2] at [<c>] at get-list + =
 
 [<c>] at get-list println
 

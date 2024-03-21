@@ -1,6 +1,7 @@
 #include "lang.hpp"
 #include <algorithm>
 #include <any>
+#include <atomic>
 #include <chrono>
 #include <iostream>
 #include <map>
@@ -224,7 +225,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     {
                         Token val = current_val;
                         val = get_tag(stack, val);
-                        
+
                         if (!is_value(val))
                         {
                             exception = true;
@@ -238,10 +239,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                             continue;
                         }
 
-                        try
-                        {
-                            static_cast<void>(std::any_cast<float>(val.value));
-                        } catch (std::exception& e)
+                        if (res.type != val.type && res.type != TokenType::DATA_String)
                         {
                             exception = true;
                             exception_message = "Value types do not agree.";

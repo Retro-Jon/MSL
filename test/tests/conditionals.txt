@@ -6,7 +6,7 @@
 end
 
 [1 'a'] + ?
-    {"Oops"} println
+    {"Oops! "} swap {"\n"} print
 end
 
 ["End"] println
