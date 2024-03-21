@@ -1,0 +1,35 @@
+[<input>] input merge
+
+$ (get-length) defunc
+    [<..text>] swap-list merge
+    [<..length> 0]
+
+    [true] while
+        [<..text>] at get {<..length>} at ?
+            break
+        end
+
+        drop-list
+
+        [<..length>] at [<..length> 1] + =
+    end
+    
+    [<..length>] at get return
+end
+
+[<word> ""]
+
+[<l> -1] [<input>] at get (get-length) {1} - merge {1} for
+    [<!c>] [<input>] at get {<l>} at merge
+
+    [<!c> ' '] == if
+        [<word>] println
+        [<word>] [""] =
+        continue
+    end
+
+    [<word>] [<word> <!c>] + =
+end
+
+[<word>] println
+

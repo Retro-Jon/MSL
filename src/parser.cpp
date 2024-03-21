@@ -107,7 +107,7 @@ bool parse(Node* nodes)
                     current->alt_next->alt_next = current;
                     node_stack.pop_back();
                 }
-                else if (val == "break")
+                else if (val == "break" || val == "continue")
                 {
                     for (int i = node_stack.size() - 1; i >= 0; i--)
                     {

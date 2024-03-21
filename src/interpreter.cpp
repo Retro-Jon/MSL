@@ -1,7 +1,6 @@
 #include "lang.hpp"
 #include <algorithm>
 #include <any>
-#include <atomic>
 #include <chrono>
 #include <iostream>
 #include <map>
@@ -198,7 +197,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     if (destination.size() != 1 || (destination.front().type != TokenType::DATA_Number && !is_tag(destination.front())))
                     {
                         exception = true;
-                        exception_message = "Expected a single integer value or tag as the destination.";
+                        exception_message = get_token_string(destination.front()) + ": Expected a single integer value or tag as the destination.";
                         break;
         	        }
 
@@ -221,6 +220,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     stack.at(pos) = values.front();
                 } else if (command == "+" || command == "-" || command == "*" || command == "/")
                 {
+                    bool first_loop = true;
                     for (Token current_val : values)
                     {
                         Token val = current_val;
@@ -229,9 +229,26 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         if (!is_value(val))
                         {
                             exception = true;
-                            exception_message = "Expected a numeric value.";
+                            
+                            if (!first_loop)
+                            {
+                                if (res.type == TokenType::DATA_Number)
+                                {
+                                    exception_message = get_token_string(val) + " : Expected a numeric value.";
+                                } else if (res.type == TokenType::DATA_String)
+                                {
+                                    exception_message = get_token_string(val) + " : Expected a numeric or string value.";
+                                }
+                            }
+                            else
+                            {
+                                exception_message = get_token_string(val) + " : Expected a numeric or string value.";
+                            }
+
                             break;
                         }
+
+                        first_loop = false;
                         
                         if (res.type == TokenType::NULL_TOKEN)
                         {
@@ -297,13 +314,12 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                             continue;
                         }
 
-                        if (res.type != val.type)
+                        if (res.type != val.type && res.type != TokenType::DATA_String)
                         {
                             exception = true;
-                            exception_message = "Can only compare values of matching types.";
+                            exception_message = TokenTypeString[res.type] + " " + TokenTypeString[val.type] + " : Can only compare values of matching types.";
                             break;
                         }
-
                         
                         auto greater = [](Token a, Token b)
                         {
@@ -549,7 +565,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         res.type = TokenType::DATA_Number;
                         res.value = float(pos + offset + 1);
                     } else {
-                        if (offset > std::any_cast<std::string>(list.at(0).value).length())
+                        if (offset >= std::any_cast<std::string>(list.at(0).value).length())
                         {
                             exception = true;
                             exception_message = "Index not found in provided string.";
@@ -680,6 +696,11 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         block.value = TokenTypeString[TokenType::CONDITION_BLOCK];
                         push_list(stack, {block});
                     } else {
+                        Token block;
+                        block.type = TokenType::CONDITION_BLOCK;
+                        block.value = TokenTypeString[TokenType::CONDITION_BLOCK];
+                        push_list(stack, {block});
+                        
                         if (!exception)
                         {
                             current = current->alt_next;
@@ -690,11 +711,6 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                             e_msg.type = TokenType::DATA_String;
                             e_msg.value = exception_message;
                             
-                            Token block;
-                            block.type = TokenType::CONDITION_BLOCK;
-                            block.value = TokenTypeString[TokenType::CONDITION_BLOCK];
-
-                            push_list(stack, {block});
                             push_list(stack, {e_msg});
                         }
                     }
@@ -967,6 +983,19 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         list = reverse_list(pop_list(stack));
 
                     current = current->alt_next->alt_next;
+                    break;
+                }
+
+                if (command == "continue")
+                {
+                    std::string target = std::any_cast<std::string>(current->alt_next->t.value);
+                    std::vector<Token> list = reverse_list(pop_list(stack));
+
+                    while (!list.empty() && list.back().type != TokenType::LOOP_BLOCK)
+                        list = reverse_list(pop_list(stack));
+
+                    current = current->alt_next;
+                    skip_end = true;
                     break;
                 }
 
