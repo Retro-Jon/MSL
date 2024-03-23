@@ -68,6 +68,13 @@ const std::string TokenTypeString[] = {
     "ADDRESS"
 };
 
+struct Function
+{
+    Node* location = nullptr;
+    Token* argument_tags = nullptr;
+    int arg_count = 0;
+};
+
 Node* tokenize(const char* code);
 bool lex(Node* Nodes);
 bool parse(Node* Nodes);

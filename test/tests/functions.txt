@@ -1,11 +1,11 @@
-$ (my-func) defunc
+$ (my-func) [] defunc
     ["HelloWorld!"] println
 end
 
-[] (my-func)
+(my-func)
 
-$ (add) defunc
-    + return
+$ (add) [<..nums>] defunc
+    [<..nums>] at get-list + return
 end
 
 [1 2 3] (add) println

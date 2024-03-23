@@ -1,7 +1,7 @@
 # Global tag
 [<a> 0]
 
-$ (func) defunc
+$ (func) [] defunc
     # Local tag
     [<..val> 0]
 
@@ -13,7 +13,7 @@ $ (func) defunc
 end
 
 # <a> = 2
-[<a>] at [] (func) =
+[<a>] at (func) =
 [<a>] println
 
 begin

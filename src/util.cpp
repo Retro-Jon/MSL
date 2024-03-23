@@ -141,6 +141,7 @@ int find_tag(std::vector<Token> list, Token tag)
     
         case TokenType::TAG_LOCAL:
         {
+            int pos = -1;
             for (int i = list.size() - 1; i >= 0; i--)
             {
                 if (list.at(i).type == TokenType::FUNCTION_CALL)
@@ -148,8 +149,9 @@ int find_tag(std::vector<Token> list, Token tag)
                 if (list.at(i).type != tag.type)
                     continue;
                 if (std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
-                    return i;
+                    pos = i;
             }
+            return pos;
             break;
         }
 

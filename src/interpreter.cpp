@@ -4,6 +4,7 @@
 #include <chrono>
 #include <iostream>
 #include <map>
+#include <string>
 
 std::vector<Token> reverse_list(std::vector<Token> list)
 {
@@ -82,7 +83,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
     Node* current = program;
     bool exception = false;
     std::string exception_message = "";
-    std::map<std::string, Node*> functions;
+    std::map<std::string, Function> functions;
     std::map<std::string, Token> constants;
 
     current = program;
@@ -304,7 +305,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         if (is_tag(val))
                         {
                             exception = true;
-                            exception_message = "Tag not found.";
+                            exception_message = get_token_string(val) + ": Tag not found.";
                             break;
                         }
 
@@ -370,7 +371,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         if (is_tag(val))
                         {
                             exception = true;
-                            exception_message = "Tag not found.";
+                            exception_message = get_token_string(val) + ": Tag not found.";
                             break;
                         }
 
@@ -423,7 +424,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         if (is_tag(val))
                         {
                             exception = true;
-                            exception_message = "Tag not found.";
+                            exception_message = get_token_string(val) + ": Tag not found.";
                             break;
                         }
 
@@ -497,7 +498,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     if (pos < 0 && list.at(0).type != TokenType::DATA_String)
                     {
                         exception = true;
-                        exception_message = "Tag not found.";
+                        exception_message = get_token_string(list.at(0)) + ": Tag not found.";
                         break;
                     }
 
@@ -548,7 +549,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         if (pos + offset + 1 > stack.size() - 1 || pos + offset + 1 < 0)
                         {
                             exception = true;
-                            exception_message = "Index not found in stack.";
+                            exception_message = std::to_string(pos + offset + 1) + ": Index not found in stack.";
                             break;
                         }
 
@@ -557,7 +558,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                             if (stack.at(i).type >= TokenType::LIST_START)
                             {
                                 exception = true;
-                                exception_message = "Index crosses into another list.";
+                                exception_message = std::to_string(i) + ": Index crosses into another list.";
                                 break;
                             }
                         }
@@ -892,7 +893,18 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         break;
                     }
 
-                    functions.insert({std::any_cast<std::string>(temp.value), current});
+                    std::vector<Token> function_args = pop_list(stack);
+                    Function new_func;
+                    new_func.location = current;
+                    new_func.argument_tags = new Token[function_args.size()];
+                    new_func.arg_count = function_args.size();
+
+                    for (int i = 0; i < new_func.arg_count; i++)
+                    {
+                        new_func.argument_tags[i] = function_args[i];
+                    }
+
+                    functions.insert({std::any_cast<std::string>(temp.value), new_func});
                     temp.type = TokenType::NULL_TOKEN;
                     current = current->alt_next;
                     break;
@@ -916,17 +928,21 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
 
                 if (command == "return" || (command == "end" && std::any_cast<std::string>(current->alt_next->t.value) == "defunc"))
                 {
-                    std::vector<Token> ret_list = reverse_list(pop_list(stack));
+                    std::vector<Token> ret_list;
+
+                    if (command == "return")
+                        ret_list = reverse_list(pop_list(stack));
+
                     std::vector<Token> list;
                     int stage = 0;
 
                     while (!stack.empty())
                     {
                         list = reverse_list(pop_list(stack));
-                        
+
                         if (list.empty())
                             continue;
-
+                        
                         if (stage == 0 && list.back().type == TokenType::FUNCTION_CALL)
                             stage = 1;
                         else if (stage == 1 && list.back().type == TokenType::ADDRESS)
@@ -1019,6 +1035,31 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     std::vector<Token> list_b = reverse_list(pop_list(stack));
                     push_list(stack, list_a);
                     push_list(stack, list_b);
+                    break;
+                }
+
+                if (command == "dup")
+                {
+                    Token tok = stack.back();
+                    append_list(stack, {tok});
+                    break;
+                }
+
+                if (command == "dup-x")
+                {
+                    std::vector<Token> x = pop_list(stack);
+                    if (x.size() != 1 || x.front().type != TokenType::DATA_Number)
+                    {
+                        exception = true;
+                        exception_message = "Expected one integer value.";
+                        break;
+                    }
+
+                    Token tok = stack.back();
+
+                    for (int i = 0; i < int(std::any_cast<float>(x.front().value)); i++)
+                        append_list(stack, {tok});
+
                     break;
                 }
 
@@ -1131,8 +1172,6 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
 
             case TokenType::USER_FUNCTION:
             {
-                std::vector<Token> args = reverse_list(pop_list(stack));
-
                 if (functions.count(command) == 0)
                 {
                     exception = true;
@@ -1140,17 +1179,25 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     break;
                 }
 
+                std::vector<Token> function_args;
+
+                for (int i = 0; i < functions.at(command).arg_count; i++)
+                {
+                    push_list(function_args, {functions.at(command).argument_tags[i]});
+                    append_list(function_args, reverse_list(pop_list(stack)));
+                }
+
                 Token ret;
                 ret.type = TokenType::ADDRESS;
                 ret.value = current->default_next;
-                push_list(stack, {ret});
 
                 Token func;
                 func.type = TokenType::FUNCTION_CALL;
+                push_list(stack, {ret});
                 push_list(stack, {func});
-                push_list(stack, args);
+                append_list(stack, function_args);
 
-                current = functions.at(command);
+                current = functions.at(command).location;
                 break;
             }
             default:
