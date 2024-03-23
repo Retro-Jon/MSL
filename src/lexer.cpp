@@ -3,7 +3,7 @@
 
 const std::set<std::string> operators = {
     "+", "-", "*", "/", "++", "--", "%", "=", "~",
-    "and", "or", "==", ">", ">=", "<", "<="
+    "and", "or", "==", "!=", ">", ">=", "<", "<="
 };
 
 bool lex(Node* nodes)

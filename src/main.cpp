@@ -4,6 +4,11 @@
 
 int main(int argc, char** argv)
 {
+    std::string executable_path = argv[0];
+
+    while (executable_path.at(executable_path.size() - 1) != '/' && executable_path.at(executable_path.size() - 1) != '\\')
+        executable_path.erase(executable_path.size() - 1, 1);
+
     if (argc == 2)
     {
         std::string program_path = argv[1];
@@ -18,7 +23,7 @@ int main(int argc, char** argv)
         Node* program = tokenize(code.c_str());
         if (lex(program))
             if (parse(program))
-                interpret(program_path, program, stack);
+                interpret(executable_path, program_path, program, stack);
         
         delete_nodes(program);
 
@@ -47,7 +52,7 @@ int main(int argc, char** argv)
             Node* program = tokenize(input.c_str());
             if (lex(program))
                 if (parse(program))
-                    interpret(program_path, program, stack);
+                    interpret(executable_path, program_path, program, stack);
 
             delete_nodes(program);
         }

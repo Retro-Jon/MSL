@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <any>
 #include <chrono>
+#include <cstdio>
 #include <iostream>
 #include <map>
 #include <string>
@@ -77,7 +78,7 @@ Token get_tag(std::vector<Token> list, Token tag)
     return tag;
 }
 
-bool interpret(std::string program_path, Node* program, std::vector<Token> &backup_stack)
+bool interpret(std::string executable_path, std::string program_path, Node* program, std::vector<Token> &backup_stack)
 {
     auto start = std::chrono::high_resolution_clock::now();
     Node* current = program;
@@ -90,6 +91,8 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
 
     std::vector<Token> stack;
     std::vector<std::string> includes;
+
+    std::string stdlibpath = executable_path + "libs/std/";
 
     for (Token t : backup_stack)
         stack.push_back(t);
@@ -182,10 +185,10 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                 Token res;
                 bool res_set = false;
                 
-                auto set_res = [&res, &res_set]()
+                auto set_res = [&res, &res_set](bool value = false)
                 {
                     res.type = TokenType::DATA_Bool;
-                    res.value = false;
+                    res.value = value;
                     res_set = true;
                 };
 
@@ -198,7 +201,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     if (destination.size() != 1 || (destination.front().type != TokenType::DATA_Number && !is_tag(destination.front())))
                     {
                         exception = true;
-                        exception_message = get_token_string(destination.front()) + ": Expected a single integer value or tag as the destination.";
+                        exception_message = "Expected a single integer value or tag as the destination.";
                         break;
         	        }
 
@@ -360,6 +363,8 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     
                     if (!res_set)
                         res.value = true;
+                    else
+                        res.value = false;
                     
                     push_list(stack, {res});
                 } else if (command == "and" || command == "or")
@@ -441,19 +446,26 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                     std::getline(std::cin, val);
 
                     Token t;
-                    if (val.at(0) >= '0' && val.at(0) <= '9')
+
+                    if (!val.empty())
                     {
-                        t.value = std::stof(val);
-                        t.type = TokenType::DATA_Number;
-                    } else if (val == "true")
+                        if (val.at(0) >= '0' && val.at(0) <= '9')
+                        {
+                            t.value = std::stof(val);
+                            t.type = TokenType::DATA_Number;
+                        } else if (val == "true")
+                        {
+                            t.value = true;
+                            t.type = TokenType::DATA_Bool;
+                        } else if (val == "false")
+                        {
+                            t.value = true;
+                            t.type = TokenType::DATA_Bool;
+                        }
+                    }
+
+                    if (t.type == TokenType::NULL_TOKEN)
                     {
-                        t.value = true;
-                        t.type = TokenType::DATA_Bool;
-                    } else if (val == "false")
-                    {
-                        t.value = true;
-                        t.type = TokenType::DATA_Bool;
-                    } else {
                         t.value = val;
                         t.type = TokenType::DATA_String;
                     }
@@ -682,7 +694,7 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                         if (condition.size() > 1 || condition.front().type != TokenType::DATA_Bool)
                         {
                             exception = true;
-                            exception_message = "Expected a single Boolean value.";
+                            exception_message = "Expected a single Boolean value but got " + get_token_string(condition.front());
                             break;
                         }
 
@@ -1109,18 +1121,26 @@ bool interpret(std::string program_path, Node* program, std::vector<Token> &back
                             break;
                         }
 
-                        if (std::find(includes.begin(), includes.end(), get_token_string(f)) != includes.end())
+                        std::string file_name = get_token_string(f);
+
+                        if (std::find(includes.begin(), includes.end(), file_name) != includes.end())
                             continue;
 
-                        includes.push_back(get_token_string(f));
+                        includes.push_back(file_name);
 
-                        std::string file_path = program_path + get_token_string(f);
+                        std::string file_path;
+                        
+                        if (file_name.substr(0, 3) == "std")
+                            file_path = stdlibpath + file_name;
+                        else
+                            file_path = program_path  + file_name;
+                        
                         std::string file_content = load_file(file_path.c_str());
                         
                         if (file_content.empty())
                         {
                             exception = true;
-                            exception_message = "Could not load file: " + get_token_string(f);
+                            exception_message = "Could not load file: " + file_path;
                             break;
                         }
 

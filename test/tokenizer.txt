@@ -1,68 +1,17 @@
-$ (get-length) [<..text>] defunc
-    [<..length> 0]
+["stdstring.txt"] include
 
-    [true] while
-        [<..text>] at get {<..length>} at ?
-            break
-        end
+$ _lorem_ ["Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."] define
 
-        drop-list
+["Enter text to tokenize.\n\n> "] print
 
-        [<..length>] at [<..length> 1] + =
-    end
-    
-    [<..length>] at get return
+[<input>] input merge
+
+[<input> ""] == if
+    [<input>] at [_lorem_] =
 end
 
-$ (get-next-token) [<..text> <..start>] defunc
-    [<..result> ""]
-    [<..index>] [<..start>] at get
+[<result>] [<input>] at get [' '] (tokenize) merge
+[<i>] [<result>] at merge
 
-    # start at <..start> - 1, go till <..text> length, and step by one.
-    [<..i>] [<..start>] at get {1} - merge [<..text>] at get (get-length) merge {1} for
-        [<..text>] at get {<..i>} at ?
-            [<..index>] [<..i>] at get =
-            break
-        end
-
-        [<!c>] [<..text>] at get {<..i>} at merge
-
-        [<!c> ' '] == if
-            [<..index>] [<..i>] at get =
-            break
-        end
-
-        [<..result>] at [<..result> <!c>] + =
-    end
-
-    [<.text>] [<..result>] at get merge {<.index>} [<..index>] at get merge return
-end
-
-$ (tokenize) [<..input>] defunc
-    [<..length>] [<..input>] at get (get-length) merge
-    [<..count> 0]
-    [<..current> ""] [<..length>] at get dup-x
-
-    [<..i> -1] [<..length>] at get merge {1} for
-        [<!result>] [<..input>] at get [<..i>] at get (get-next-token) merge
-        [<!result>] at get-list [<.text> " : " <.index> "\n"] drop-list
-        [<..i>] at [<!result>] at get-list [<.index>] at get swap-list drop-list =
-        [<..current> <..count>] at [<!result>] at get-list [<.text>] at get swap-list drop-list =
-        [<..count>] at [<..count> 1] + =
-    end
-
-    [<..output> ""] [<..count>] at get dup-x drop
-
-    [<..i> -1] [<..count>] at get {1} - merge {1} for
-        [<..output> <..i>] at [<..current> <..i>] at get =
-    end
-
-    [<..output>] at get-list return
-end
-
-# [<input>] input merge
-[<input> "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."]
-
-[<result>] [<input>] at get (tokenize) merge
 [<result>] at get-list println
 
