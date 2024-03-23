@@ -8,7 +8,7 @@ $ (get-length) [<..text>] defunc
 
         drop-list
 
-        [<..length>] at [<..length> 1] + =
+        [<..length>] [<..length> 1] + =
     end
     
     [<..length>] at get return
@@ -19,7 +19,7 @@ $ (get-next-token) [<..text> <..start> <..delim>] defunc
     [<..index>] [<..start>] at get
 
     # start at <..start> - 1, go till <..text> length, and step by one.
-    [<..i>] [<..start>] at get {1} - merge [<..text>] at get (get-length) merge {1} for
+    [<..i>] [<..start>] at get {1} - [<..text>] at get (get-length) [3] merge-x {1} for
         [<..text>] at get {<..i>} at ?
             [<..index>] [<..i>] at get =
             break
@@ -32,36 +32,41 @@ $ (get-next-token) [<..text> <..start> <..delim>] defunc
             break
         end
 
-        [<..result>] at [<..result> <!c>] + =
+        [<..result>] [<..result> <!c>] + =
     end
 
-    [<.text>] [<..result>] at get merge {<.index>} [<..index>] at get merge return
+    [<.text>] [<..result>] at get {<.index>} [<..index>] at get [3] merge-x return
 end
 
 $ (tokenize) [<..input> <..delim>] defunc
     [<..length>] [<..input>] at get (get-length) merge
     [<..count> 0]
     [<..current> ""] [<..length>] at get dup-x
+    [<..text> ""]
 
     [<..i> -1] [<..length>] at get merge {1} for
-        [<!result>] [<..input>] at get [<..i>] at get [<..delim>] at get (get-next-token) merge
-        [<!result>] at get-list [<.text> " : " <.index> "\n"] drop-list
-        [<..i>] at [<!result>] at get-list [<.index>] at get swap-list drop-list =
+        [<..i>] at
+        [<..input>] at get [<..i>] at get [<..delim>] at get (get-next-token) merge
+            [<.text>] at [<..text>] swap-list get =
+            [<.index>] at [<..i>] swap-list get =
 
-        [<..delim>] at get {' '} == if
-            [<..i>] at [<..i> 1] + =
+        [<..current> <..count>] at [<..text>] at get =
+        [<..text>] println
+
+        [<..delim>] at get {' '} != if
+            [<..i>] [<..i> 1] + =
         end
         
-        [<..current> <..count>] at [<!result>] at get-list [<.text>] at get swap-list drop-list =
-        [<..count>] at [<..count> 1] + =
+        [<..count>] [<..count> 1] + =
     end
 
-    [<..output> ""] [<..count>] at get dup-x drop
+    [<..output> ""]
+    [""] [<..count>] at get dup-x drop
 
     [<..i> -1] [<..count>] at get {1} - merge {1} for
-        [<..output> <..i>] at [<..current> <..i>] at get =
+        [<..output>] at {2} + {<..i>} + [<..current> <..i>] at get =
     end
 
-    [<..output>] at get-list return
+    return
 end
 

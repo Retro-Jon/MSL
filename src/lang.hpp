@@ -25,14 +25,51 @@ enum TokenType
     LOOP_BLOCK,
     BLOCK,
     COMMAND,
-    OPERATOR,
-    ADDRESS
+    OPERATOR
+};
+
+enum CommandEnum
+{
+    UNKNOWN_COMMAND,
+    PRINT,
+    PRINTLN,
+    INPUT,
+    PRINT_STACK,
+    DROP,
+    DROP_LIST,
+    AT,
+    GET,
+    GET_LIST,
+    GET_LIST_VALUES,
+    MERGE,
+    MERGE_X,
+    INT,
+    IF,
+    ERROR_HANDLER,
+    BEGIN,
+    LOOP,
+    WHILE,
+    FOR,
+    DEFUNC,
+    CHACHE,
+    RETURN,
+    END,
+    BREAK,
+    CONTINUE,
+    SWAP,
+    SWAP_LIST,
+    DUP,
+    DUP_X,
+    DEFINE,
+    INCLUDE,
+    EXIT
 };
 
 struct Token
 {
     std::any value;
     TokenType type = TokenType::NULL_TOKEN;
+    CommandEnum command = CommandEnum::UNKNOWN_COMMAND;
 };
 
 struct Node
@@ -64,8 +101,7 @@ const std::string TokenTypeString[] = {
     "LOOP_BLOCK",
     "BLOCK",
     "COMMAND",
-    "OPERATOR",
-    "ADDRESS"
+    "OPERATOR"
 };
 
 struct Function
@@ -82,6 +118,7 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
 
 std::string load_file(const char* path);
 void delete_nodes(Node* pointer);
+CommandEnum get_command_enum(Token t);
 std::string get_token_string(Token t);
 std::string trim_num_string(std::string num);
 

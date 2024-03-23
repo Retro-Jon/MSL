@@ -160,7 +160,15 @@ bool lex(Node* nodes)
                     error_msg(pointer, "Unknown boolean value.");
                     return false;
                 }
+                break;
             }
+
+            case TokenType::COMMAND:
+            {
+                pointer->t.command = get_command_enum(pointer->t);
+                break;
+            }
+
             default:
                 break;
         }
