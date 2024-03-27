@@ -6,4 +6,4 @@ debug:
 	$(CC) $(SRC) -o $(BUILD) -g
 
 release:
-	$(CC) $(SRC) -o $(BUILD) -O3
+	$(CC) $(SRC) -o $(BUILD) -Ofast

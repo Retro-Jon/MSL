@@ -2,17 +2,21 @@
 #include <algorithm>
 #include <any>
 #include <chrono>
+#include <cmath>
 #include <iostream>
-#include <map>
 #include <string>
+#include <map>
 
 std::vector<Token> reverse_list(std::vector<Token> list)
 {
     std::vector<Token> res;
 
-    for (int i = list.size() - 1; i >= 0; i--)
-        res.push_back(list.at(i));
-   
+    while (!list.empty())
+    {
+        res.push_back(list.back());
+        list.pop_back();
+    }
+
     return res;
 }
 
@@ -48,27 +52,27 @@ void print_list(std::vector<Token> list)
         last_item = item;
     }
 
+    if (match)
+        std::cout << "\n...\n" << i << " : " << last_item << " ";
+
     std::cout << std::endl;
 }
 
 std::vector<Token> pop_list(std::vector<Token> &stack)
 {
     std::vector<Token> list;
+    bool end = false;
 
-    for (int i = stack.size() - 1; i >= 0; i--)
+    while (!stack.empty() && stack.back().type != TokenType::LIST_START && stack.back().type != TokenType::FUNCTION_CALL)
     {
-        if (stack.at(i).type == TokenType::LIST_START)
-        {
-            stack.pop_back();
-            break;
-        }
-
         list.push_back(stack.back());
         stack.pop_back();
-
-        if (list.back().type == TokenType::FUNCTION_CALL)
-            break;
     }
+
+    if (!stack.empty() && stack.back().type == TokenType::FUNCTION_CALL)
+        list.push_back(stack.back());
+
+    stack.pop_back();
 
     return list;
 }
@@ -97,19 +101,18 @@ void push_list(std::vector<Token> &stack, std::vector<Token> list)
 
 Token get_tag(std::vector<Token> list, Token tag)
 {
-    if (is_tag(tag))
-    {
-        int pos = find_tag(list, tag);
-        if (pos >= 0 && pos < list.size() - 1)
-            return list.at(pos + 1);
-    }
+    if (!is_tag(tag))
+        return tag;
+
+    int pos = find_tag(list, tag);
+    if (pos >= 0 && pos < list.size() - 1)
+        return list.at(pos + 1);
 
     return tag;
 }
 
 bool interpret(std::string executable_path, std::string program_path, Node* program, std::vector<Token> &backup_stack)
 {
-    auto start = std::chrono::high_resolution_clock::now();
     Node* current = program;
     bool exception = false;
     std::string exception_message = "";
@@ -129,6 +132,7 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
     bool in_list = false;
     Token temp;
 
+    auto start = std::chrono::high_resolution_clock::now();
     while (current != nullptr)
     {
         if (current == nullptr)
@@ -167,47 +171,48 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
             case TokenType::DATA_Bool:
             case TokenType::CONSTANT:
             {
-                if (in_list == false)
+                
+                if (in_list)
                 {
+                    if (current->t.type == TokenType::CONSTANT)
+                    {
+                        if (constants.count(get_token_string(current->t)) == 1)
+                        {
+                            stack.push_back(constants.at(get_token_string(current->t)));
+                            break;
+                        }
+                        exception = true;
+                        exception_message = "Undefined constant.\nConstants must be defined before being used.";
+                        break;
+                    }
+
+                    stack.push_back(current->t);
+                    break;
+                } else {
                     exception = true;
                     exception_message = "Stray value.\nValues must be pushed to the stack as part of a list.";
                     break;
-                } else {
-                    if (current->t.type == TokenType::CONSTANT)
-                    {
-                        if (constants.count(get_token_string(current->t)) == 0)
-                        {
-                            exception = true;
-                            exception_message = "Undefined constant.\nConstants must be defined before being used.";
-                            break;
-                        }
-                        stack.push_back(constants.at(get_token_string(current->t)));
-                    } else {
-                        stack.push_back(current->t);
-                    }
                 }
-                break;
             }
 
             case TokenType::OPERATOR:
             {
                 auto equal = [&exception, &exception_message](Token a, Token b)
                 {
-                    if (a.type != b.type)
+                    if (a.type == b.type)
                     {
-                        exception = true;
-                        exception_message = "Mismatched Types";
-                        return false;
+                        if (a.type == TokenType::DATA_Bool)
+                            return std::any_cast<bool>(a.value) == std::any_cast<bool>(b.value);
+                        if (a.type == TokenType::DATA_Char)
+                            return std::any_cast<char>(a.value) == std::any_cast<char>(b.value);
+                        if (a.type == TokenType::DATA_String)
+                            return std::any_cast<std::string>(a.value) == std::any_cast<std::string>(b.value);
+                        if (a.type == TokenType::DATA_Number)
+                            return std::any_cast<float>(a.value) == std::any_cast<float>(b.value);
                     }
-                    if (a.type == TokenType::DATA_Bool)
-                        return std::any_cast<bool>(a.value) == std::any_cast<bool>(b.value);
-                    if (a.type == TokenType::DATA_Char)
-                        return std::any_cast<char>(a.value) == std::any_cast<char>(b.value);
-                    if (a.type == TokenType::DATA_String)
-                        return std::any_cast<std::string>(a.value) == std::any_cast<std::string>(b.value);
-                    if (a.type == TokenType::DATA_Number)
-                        return std::any_cast<float>(a.value) == std::any_cast<float>(b.value);
 
+                    exception = true;
+                    exception_message = "Mismatched Types";
                     return false;
                 };
                 
@@ -227,134 +232,100 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                 {
                     std::vector<Token> destination = pop_list(stack);
 
-                    if (destination.size() != 1 || (destination.front().type != TokenType::DATA_Number && !is_tag(destination.front())))
+                    if (destination.size() == 1 && (destination.back().type == TokenType::DATA_Number || is_tag(destination.back())))
                     {
+                        Token tok = destination.back();
+                        int pos = 0;
+
+                        pos = is_tag(tok) ? find_tag(stack, tok) + 1 : std::any_cast<float>(tok.value);
+
+                        if (pos < stack.size())
+                        {
+                            stack.at(pos) = values.front();
+                            break;
+                        }
+
+                        exception = true;
+                        exception_message = "Position not on stack";
+                        break;
+                    } else {
                         exception = true;
                         exception_message = "Expected a single integer value or tag as the destination.";
                         break;
         	        }
-
-                    int pos = 0;
-
-                    if (is_tag(destination.front()))
-                        pos += find_tag(stack, destination.front()) + 1;
-                    else
-                    {
-                        pos += std::any_cast<float>(destination.front().value);
-                    }
-
-                    if (pos >= stack.size())
-                    {
-                        exception = true;
-                        exception_message = "Position not on stack";
-                        break;
-                    }
-
-                    stack.at(pos) = values.front();
                 } else if (command == "+" || command == "-" || command == "*" || command == "/")
                 {
-                    bool first_loop = true;
                     for (Token current_val : values)
                     {
-                        Token val = current_val;
-                        val = get_tag(stack, val);
+                        Token val = get_tag(stack, current_val);
 
-                        if (!is_value(val))
+                        if (is_value(val))
                         {
-                            exception = true;
-                            
-                            if (!first_loop)
+                            if (res.type == TokenType::NULL_TOKEN)
                             {
-                                if (res.type == TokenType::DATA_Number)
+                                res = val;
+                                continue;
+                            }
+
+                            if (res.type == TokenType::DATA_Number && val.type == TokenType::DATA_Number)
+                            {
+                                if (command == "+")
+                                    res.value = std::any_cast<float>(res.value) + std::any_cast<float>(val.value);
+                                else if (command == "-")
+                                    res.value = std::any_cast<float>(res.value) - std::any_cast<float>(val.value);
+                                else if (command == "*")
+                                    res.value = std::any_cast<float>(res.value) * std::any_cast<float>(val.value);
+                                else if (command == "/")
                                 {
-                                    exception_message = get_token_string(val) + " : Expected a numeric value.";
-                                } else if (res.type == TokenType::DATA_String)
-                                {
-                                    exception_message = get_token_string(val) + " : Expected a numeric or string value.";
+                                    if (std::any_cast<float>(res.value) == 0)
+                                    {
+                                        exception = true;
+                                        exception_message = "Divide by Zero.";
+                                        break;
+                                    }
+                                    res.value = std::any_cast<float>(res.value) / std::any_cast<float>(val.value);
                                 }
-                            }
-                            else
+                            } else if (res.type == TokenType::DATA_String)
                             {
-                                exception_message = get_token_string(val) + " : Expected a numeric or string value.";
-                            }
-
-                            break;
-                        }
-
-                        first_loop = false;
-                        
-                        if (res.type == TokenType::NULL_TOKEN)
-                        {
-                            res = val;
-                            continue;
-                        }
-
-                        if (res.type != val.type && res.type != TokenType::DATA_String)
-                        {
-                            exception = true;
-                            exception_message = "Value types do not agree.";
-                            break;
-                        }
-
-                        if (res.type == TokenType::DATA_Number)
-                        {
-                            if (command == "+")
-                                res.value = std::any_cast<float>(res.value) + std::any_cast<float>(val.value);
-                            else if (command == "-")
-                                res.value = std::any_cast<float>(res.value) - std::any_cast<float>(val.value);
-                            else if (command == "*")
-                                res.value = std::any_cast<float>(res.value) * std::any_cast<float>(val.value);
-                            else if (command == "/")
-                            {
-                                if (std::any_cast<float>(res.value) == 0)
-                                {
+                                if (command == "+")
+                                    res.value = std::any_cast<std::string>(res.value) + get_token_string(val);
+                                else {
                                     exception = true;
-                                    exception_message = "Divide by Zero.";
+                                    exception_message = "Invalid string operation.";
                                     break;
                                 }
-                                res.value = std::any_cast<float>(res.value) / std::any_cast<float>(val.value);
-                            }
-                        } else if (res.type == TokenType::DATA_String)
-                        {
-                            if (command != "+")
-                            {
+                            } else {
                                 exception = true;
-                                exception_message = "Invalid string operation.";
+                                exception_message = "Value types do not agree.";
                                 break;
                             }
+                        } else {
+                            exception = true;
+                            
+                            switch (res.type)
+                            {
+                                case TokenType::DATA_Number:
+                                    exception_message = get_token_string(val) + " : Expected a numeric value.";
+                                    break;
 
-                            res.value = std::any_cast<std::string>(res.value) + get_token_string(val);
+                                case TokenType::DATA_String:
+                                    exception_message = get_token_string(val) + " : Expected a numeric or string value.";
+                                    break;
+
+                                default:
+                                    break;
+                            }
+
+                            break;
                         }
                     }
                     if (!exception)
                         push_list(stack, {res});
                 } else if (command == "==" || command == "!=" || command == ">" || command == ">=" || command == "<" || command == "<=")
                 {
-                    for (Token current_val : values)
+                    auto greater = [](Token a, Token b)
                     {
-                        Token val = get_tag(stack, current_val);
-
-                        if (is_tag(val))
-                        {
-                            exception = true;
-                            exception_message = get_token_string(val) + ": Tag not found.";
-                            break;
-                        }
-
-                        if (res.type == TokenType::NULL_TOKEN)
-                        {
-                            res = val;
-                            continue;
-                        }
-
-                        if (res.type != val.type && res.type != TokenType::DATA_String)
-                        {
-                            exception = true;
-                            exception_message = TokenTypeString[res.type] + " " + TokenTypeString[val.type] + " : Can only compare values of matching types.";
-                            break;
-                        }
-                        
-                        auto greater = [](Token a, Token b)
+                        if (a.type == b.type)
                         {
                             if (a.type == TokenType::DATA_Bool)
                                 return std::any_cast<bool>(a.value) > std::any_cast<bool>(b.value);
@@ -364,24 +335,55 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                                 return std::any_cast<std::string>(a.value) > std::any_cast<std::string>(b.value);
                             if (a.type == TokenType::DATA_Number)
                                 return std::any_cast<float>(a.value) > std::any_cast<float>(b.value);
+                        }
+                        return false;
+                    };
 
-                            return false;
-                        };
+                    Token val;
+                    for (Token current_val : values)
+                    {
+                        val = get_tag(stack, current_val);
 
-                        if (command == "==" && !equal(res, val))
-                            set_res();
-                        else if (command == "!=" && equal(res, val))
-                            set_res();
-                        else if (command == ">" && !greater(res, val))
-                            set_res();
-                        else if (command == ">=" && !greater(res, val) && !equal(res, val))
-                            set_res();
-                        else if (command == "<" && greater(res, val))
-                            set_res();
-                        else if (command == "<=" && greater(res, val) && !equal(res, val))
-                            set_res();
+                        if (!is_tag(val))
+                        {
+                            switch (res.type)
+                            {
+                                case TokenType::NULL_TOKEN:
+                                {
+                                    res = val;
+                                    break;
+                                }
 
-                        if (res_set == true)
+                                default:
+                                {
+                                    if (res.type == val.type || res.type == TokenType::DATA_String)
+                                    {
+                                        if (command == "==" && !equal(res, val))
+                                            set_res();
+                                        else if (command == "!=" && equal(res, val))
+                                            set_res();
+                                        else if (command == ">" && !greater(res, val))
+                                            set_res();
+                                        else if (command == ">=" && !greater(res, val) && !equal(res, val))
+                                            set_res();
+                                        else if (command == "<" && greater(res, val))
+                                            set_res();
+                                        else if (command == "<=" && greater(res, val) && !equal(res, val))
+                                            set_res();
+                                    } else {
+                                        exception = true;
+                                        exception_message = TokenTypeString[res.type] + " " + TokenTypeString[val.type] + " : Can only compare values of matching types.";
+                                    }
+                                    break;
+                                }
+                            }
+                        } else {
+                            exception = true;
+                            exception_message = get_token_string(val) + ": Tag not found.";
+                            break;
+                        }
+
+                        if (exception)
                             break;
                     }
 
@@ -409,37 +411,35 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                             break;
                         }
 
-                        if (val.type != TokenType::DATA_Bool)
+                        if (val.type == TokenType::DATA_Bool)
                         {
+                            if (res.type == TokenType::NULL_TOKEN)
+                            {
+                                res = val;
+                                continue;
+                            }
+
+                            if (command == "and" && !equal(res, val))
+                                set_res();
+                            else if (command == "or" && (std::any_cast<bool>(res.value) == false && std::any_cast<bool>(val.value) == false))
+                                set_res();
+                        
+                            res.type = TokenType::DATA_Bool;
+
+                            if (res_set)
+                                break;
+                        } else {
                             exception = true;
                             exception_message = "Can only compare booleans.";
                             break;
                         }
-
-
-                        if (res.type == TokenType::NULL_TOKEN)
-                        {
-                            res = val;
-                            continue;
-                        }
-
-                        if (command == "and" && !equal(res, val))
-                            set_res();
-                        else if (command == "or" && (std::any_cast<bool>(res.value) == false && std::any_cast<bool>(val.value) == false))
-                            set_res();
-                        
-                        res.type = TokenType::DATA_Bool;
-
-                        if (res_set == true)
-                            break;
                     }
 
                     if (exception == true)
                         break;
 
                     res.type = TokenType::DATA_Bool;
-                    if (res_set == false)
-                        res.value = true;
+                    res.value = !res_set;
 
                     push_list(stack, {res});
                 }
@@ -448,26 +448,28 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
 
             case TokenType::COMMAND:
             {
-                switch (current->t.command)
+                CommandEnum command_enum = get_command_enum(command);
+
+                switch (command_enum)
                 {
-                    case CommandEnum::PRINT:
                     case CommandEnum::PRINTLN:
+                    case CommandEnum::PRINT:
                     {
                         std::vector<Token> list = pop_list(stack);
                     
                         for (Token t : reverse_list(list))
                         {
                             Token val = get_tag(stack, t);
-                            if (is_tag(val))
+
+                            if (is_value(val))
                             {
+                                std::cout << get_token_string(val) << (command_enum == PRINTLN ? "\n" : "");
+                                std::cout.flush();
+                            } else {
                                 exception = true;
                                 exception_message = get_token_string(val) + ": Tag not found.";
                                 break;
                             }
-
-                            std::cout << get_token_string(val);
-                            if (command == "println")
-                                std::cout << std::endl;
                         }
                         break;
                     }
@@ -478,6 +480,8 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                         std::getline(std::cin, val);
     
                         Token t;
+                        t.value = val;
+                        t.type = TokenType::DATA_String;
     
                         if (!val.empty())
                         {
@@ -485,23 +489,13 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                             {
                                 t.value = std::stof(val);
                                 t.type = TokenType::DATA_Number;
-                            } else if (val == "true")
+                            } else if (val == "true" || val == "false")
                             {
-                                t.value = true;
-                                t.type = TokenType::DATA_Bool;
-                            } else if (val == "false")
-                            {
-                                t.value = true;
+                                t.value = (val == "true");
                                 t.type = TokenType::DATA_Bool;
                             }
                         }
-    
-                        if (t.type == TokenType::NULL_TOKEN)
-                        {
-                            t.value = val;
-                            t.type = TokenType::DATA_String;
-                        }
-    
+
                         push_list(stack, {t});
                         break;
                     }
@@ -530,127 +524,148 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                         // GLOBAL_TAG | LOCAL_TAG | MEMBER_TAG | DATA_String
                         // INT
     
-                        if (list.size() == 0)
+                        if (!list.empty())
                         {
+                            int pos = find_tag(stack, list.at(0));
+    
+                            if (pos < 0 && list.front().type != TokenType::DATA_String)
+                            {
+                                exception = true;
+                                exception_message = get_token_string(list.at(0)) + ": Tag not found.";
+                                break;
+                            }
+    
+                            int offset = 0;
+    
+                            if (list.size() == 2)
+                            {
+                                offset = list.at(1).type == TokenType::DATA_Number ? int(std::any_cast<float>(list.at(1).value)) : 0;
+
+                                if (list.at(1).type != TokenType::DATA_Number)
+                                {
+                                    int o_pos = find_tag(stack, list.at(1));
+
+                                    if (o_pos >= 0)
+                                    {
+                                        if (list.at(1).type == TokenType::TAG_MEMBER)
+                                            offset = o_pos;
+                                        else if (is_tag(list.at(1)))
+                                        {
+                                            if (stack.at(o_pos + 1).type == TokenType::DATA_Number)
+                                                offset = int(std::any_cast<float>(stack.at(o_pos + 1).value));
+                                            else
+                                            {
+                                                exception = true;
+                                                exception_message = "Offset tag does not mark a Number.";
+                                                break;
+                                            }
+                                        }
+                                    } else {
+                                        exception = true;
+                                        exception_message = "Offset tag not found.";
+                                        break;
+                                    }
+                                }
+                            }
+    
+                            if (offset >= 0)
+                            {
+                                Token res;
+    
+                                if (list.front().type != TokenType::DATA_String)
+                                {
+                                    if (pos + offset + 1 > stack.size() - 1 || pos + offset + 1 < 0)
+                                    {
+                                        exception = true;
+                                        exception_message = std::to_string(pos + offset + 1) + ": Index not found in stack.";
+                                        break;
+                                    }
+
+                                    int distance = std::abs((offset + 1) - pos);
+                                    int end = pos + offset + 1;
+    
+                                    for (int i = 0; i < ((offset + 1) / 2) + ((offset + 1) % 2); i++)
+                                    {
+                                        if (stack.at(pos + i).type >= TokenType::LIST_START || stack.at(end - i).type >= TokenType::LIST_START)
+                                        {
+                                            exception = true;
+                                            exception_message = std::to_string(i) + ": Index crosses into another list.";
+                                            break;
+                                        }
+                                    }
+    
+                                    res.type = TokenType::DATA_Number;
+                                    res.value = float(pos + offset + 1);
+                                } else {
+                                    if (offset < std::any_cast<std::string>(list.front().value).length())
+                                    {
+                                        res.type = TokenType::DATA_Char;
+                                        res.value = std::any_cast<std::string>(list.front().value).at(offset);
+                                    } else {
+                                        exception = true;
+                                        exception_message = "Index not found in provided string.";
+                                        break;
+                                    }
+                                }
+    
+                                push_list(stack, {res});
+                            } else {
+                                exception = true;
+                                exception_message = "Offset cannot be less than 0";
+                                break;
+                            }
+                        } else {
                             exception = true;
                             exception_message = "Expected a Tag as the first item.";
                             break;
                         }
-    
-                        int pos = find_tag(stack, list.at(0));
-    
-                        if (pos < 0 && list.at(0).type != TokenType::DATA_String)
-                        {
-                            exception = true;
-                            exception_message = get_token_string(list.at(0)) + ": Tag not found.";
-                            break;
-                        }
-    
-                        int offset = 0;
-    
-                        if (list.size() == 2)
-                        {
-                            if (list.at(1).type == TokenType::DATA_Number)
-                                offset = std::any_cast<float>(list.at(1).value);
-                            else
-                            {
-                                int o_pos = find_tag(stack, list.at(1));
-                                if (o_pos < 0)
-                                {
-                                    exception = true;
-                                    exception_message = "Offset tag not found.";
-                                    break;
-                                }
-    
-                                if (list.at(1).type == TokenType::TAG_MEMBER)
-                                    offset = o_pos;
-                                else if (is_tag(list.at(1)))
-                                {
-                                    if (stack.at(o_pos + 1).type != TokenType::DATA_Number)
-                                    {
-                                        exception = true;
-                                        exception_message = "Offset tag does not mark a Number.";
-                                        break;
-                                    }
-                                    Token val;
-                                    val = stack.at(o_pos + 1);
-                                    offset = std::any_cast<float>(val.value);
-                                }
-                            }
-                        }
-    
-                        if (offset < 0)
-                        {
-                            exception = true;
-                            exception_message = "Offset cannot be less than 0";
-                            break;
-                        }
-    
-                        Token res;
-    
-                        if (list.at(0).type != TokenType::DATA_String)
-                        {
-                            if (pos + offset + 1 > stack.size() - 1 || pos + offset + 1 < 0)
-                            {
-                                exception = true;
-                                exception_message = std::to_string(pos + offset + 1) + ": Index not found in stack.";
-                                break;
-                            }
-    
-                            for (int i = pos + offset + 1; i >= pos; i--)
-                            {
-                                if (stack.at(i).type >= TokenType::LIST_START)
-                                {
-                                    exception = true;
-                                    exception_message = std::to_string(i) + ": Index crosses into another list.";
-                                    break;
-                                }
-                            }
-    
-                            res.type = TokenType::DATA_Number;
-                            res.value = float(pos + offset + 1);
-                        } else {
-                            if (offset >= std::any_cast<std::string>(list.at(0).value).length())
-                            {
-                                exception = true;
-                                exception_message = "Index not found in provided string.";
-                                break;
-                            }
-    
-                            res.type = TokenType::DATA_Char;
-                            res.value = std::any_cast<std::string>(list.at(0).value).at(offset);
-                        }
-    
-                        push_list(stack, {res});
                         break;
                     }
 
                     case CommandEnum::GET:
                     {
-                        std::vector<Token> tag = pop_list(stack);
+                        std::vector<Token> list = pop_list(stack);
     
-                        if (tag.size() != 1 || tag.front().type != TokenType::DATA_Number)
+                        if (list.size() == 1)
                         {
+                            Token tok = list.back();
+
+                            if (is_tag(tok))
+                            {
+                                if (is_value(get_tag(stack, tok)))
+                                    push_list(stack, {get_tag(stack, tok)});
+                                else
+                                {
+                                    exception = true;
+                                    exception_message = "Provided index does not exist on the stack.";
+                                    break;
+                                }
+                            } else if (tok.type == TokenType::DATA_Number)
+                            {
+                                int pos = int(std::any_cast<float>(tok.value));
+
+                                if (pos >= 0 && pos < stack.size())
+                                {
+                                    if (is_value(stack.at(pos)))
+                                        push_list(stack, {stack.at(pos)});
+                                    else
+                                    {
+                                        Token t_type;
+                                        t_type.type = TokenType::DATA_String;
+                                        t_type.value = TokenTypeString[stack.at(pos).type];
+                                        push_list(stack, {t_type});
+                                    }
+                                } else {
+                                    exception = true;
+                                    exception_message = "Provided index does not exist on the stack.";
+                                    break;
+                                }
+                            }
+                        } else {
                             exception = true;
-                            exception_message = "Expected a single integer value.";
+                            exception_message = "Expected a tag or a single integer value.";
                             break;
             	        }
-    
-                        if (std::any_cast<float>(tag.front().value) >= stack.size() || stack.size() == 0)
-                        {
-                            exception = true;
-                            exception_message = "Provided index does not exist on the stack.";
-                            break;
-                        }
-    
-                        if (!is_value(stack.at(std::any_cast<float>(tag.front().value))))
-                        {
-                            Token t_type;
-                            t_type.type = TokenType::DATA_String;
-                            t_type.value = TokenTypeString[stack.at(std::any_cast<float>(tag.front().value)).type];
-                            push_list(stack, {t_type});
-                        } else
-                            push_list(stack, {stack.at(std::any_cast<float>(tag.front().value))});
     
                         break;
                     }
@@ -660,36 +675,31 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
 				    {
                         std::vector<Token> tag = pop_list(stack);
     
-                        if (tag.size() != 1 || tag.front().type != TokenType::DATA_Number)
+                        if (tag.size() == 1 && tag.back().type == TokenType::DATA_Number)
                         {
-                            exception = true;
-                            exception_message = "Expected a single integer value.";
+                            int pos = int(std::any_cast<float>(tag.front().value));
+
+                            std::vector<Token> list;
+
+                            for (int i = pos; i < stack.size(); i++)
+                            {
+                                Token tok = stack.at(i);
+                                
+                                if (command_enum != CommandEnum::GET_LIST_VALUES && !is_tag(tok))
+                                {
+                                    if (tok.type != TokenType::LIST_START && tok.type != TokenType::FUNCTION_CALL)
+                                        list.push_back(tok);
+                                    else
+                                        break;
+                                }
+                            }
+
+                            push_list(stack, list);
                             break;
-            	        } int pos = 0;
-                        
-                        try
-                        {
-                            pos = std::any_cast<float>(tag.front().value);
-                        }
-                        catch (std::exception& e)
-                        {
-                            pos = std::any_cast<int>(tag.front().value);
                         }
 
-                        std::vector<Token> list;
-
-                        for (int i = pos; i < stack.size(); i++)
-                        {
-                            if (stack.at(i).type == TokenType::LIST_START || stack.at(i).type == TokenType::FUNCTION_CALL)
-                                break;
-
-                            if (command == "get-list-values" && is_tag(stack.at(i)))
-                                continue;
-                            
-                            append_list(list, {stack.at(i)});
-                        }
-
-                        push_list(stack, list);
+                        exception = true;
+                        exception_message = "Expected a single integer value.";
                         break;
 				    }
 
@@ -702,33 +712,34 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                     case CommandEnum::MERGE_X:
                     {
                         std::vector<Token> args = pop_list(stack);
-    
-                        if (args.size() != 1)
+                        Token count;
+
+                        if (args.size() == 1)
+                            count = get_tag(stack, args.back());
+                        else
                         {
                             exception = true;
                             exception_message = "Expected a single element list, containing a numeric value.";
                             break;
                         }
     
-                        Token count = get_tag(stack, args.back());
-    
-                        if (count.type != TokenType::DATA_Number)
+                        if (count.type == TokenType::DATA_Number)
                         {
-                            exception = true;
-                            exception_message = "Expected a single element list, containing a numeric value.";
-                            break;
-                        }
-    
-                        std::vector<Token> result;
+                            std::vector<Token> result;
                         
-                        for (int i = 0; i < int(std::any_cast<float>(count.value)); i++)
-                        {
-                            std::vector<Token> b = reverse_list(pop_list(stack));
-                            append_list(b, result);
-                            result = b;
-                        }
+                            for (int i = 0; i < int(std::any_cast<float>(count.value)); i++)
+                            {
+                                std::vector<Token> b = reverse_list(pop_list(stack));
+                                append_list(b, result);
+                                result = b;
+                            }
     
-                        push_list(stack, result);
+                            push_list(stack, result);
+                        } else {
+                            exception = true;
+                            exception_message = "Expected a single element list, containing a numeric value.";
+                            break;
+                        }
                         break;
                     }
 
@@ -753,47 +764,38 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                         {
                             std::vector<Token> condition = pop_list(stack);
     
-                            if (condition.empty())
+                            if (condition.size() == 1 && condition.front().type == TokenType::DATA_Bool)
                             {
+                                if (std::any_cast<bool>(condition.front().value) == false)
+                                {
+                                    current = current->alt_next;
+                                    skip_end = true;
+                                }
+                            } else {
                                 exception = true;
                                 exception_message = "Expected a single Boolean value.";
                                 break;
                             }
-    
-                            if (condition.size() > 1 || condition.front().type != TokenType::DATA_Bool)
-                            {
-                                exception = true;
-                                exception_message = "Expected a single Boolean value but got " + get_token_string(condition.front());
-                                break;
-                            }
-    
-                            if (std::any_cast<bool>(condition.front().value) == false)
-                            {
-                                current = current->alt_next;
-                                skip_end = true;
-                            }
                             
                             Token block;
                             block.type = TokenType::CONDITION_BLOCK;
-                            block.value = TokenTypeString[TokenType::CONDITION_BLOCK];
                             push_list(stack, {block});
                         } else {
                             Token block;
                             block.type = TokenType::CONDITION_BLOCK;
-                            block.value = TokenTypeString[TokenType::CONDITION_BLOCK];
                             push_list(stack, {block});
                             
-                            if (!exception)
+                            if (exception)
                             {
-                                current = current->alt_next;
-                                skip_end = true;
-                            } else {
                                 exception = false;
                                 Token e_msg;
                                 e_msg.type = TokenType::DATA_String;
                                 e_msg.value = exception_message;
                                 
                                 push_list(stack, {e_msg});
+                            } else {
+                                current = current->alt_next;
+                                skip_end = true;
                             }
                         }
                         break;
@@ -803,7 +805,6 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                     {
                         Token block;
                         block.type = TokenType::BLOCK;
-                        block.value = TokenTypeString[TokenType::BLOCK];
                         push_list(stack, {block});
                         break;
                     }
@@ -812,29 +813,29 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                     {
                         std::vector<Token> list = pop_list(stack);
     
-                        if (list.empty())
+                        if (!list.empty())
                         {
+                            list.front() = get_tag(stack, list.front());
+                        } else {
                             exception = true;
                             exception_message = "Expected a single element list, containing an integer value.";
                             break;
                         }
     
-                        list.front() = get_tag(stack, list.front());
-    
-                        if (list.front().type != TokenType::DATA_Number)
+                        if (list.front().type == TokenType::DATA_Number)
                         {
+                            if (int(std::any_cast<float>(list.front().value)) == 0)
+                            {
+                                current = current->alt_next->default_next;
+                                skip_end = true;
+                                break;
+                            }
+                        } else {
                             exception = true;
                             exception_message = "Expected a single element list, containing an integer value.";
                             break;
                         }
-                        
-                        if (int(std::any_cast<float>(list.front().value)) == 0)
-                        {
-                            current = current->alt_next->default_next;
-                            skip_end = true;
-                            break;
-                        }
-    
+
                         Token count;
                         count = list.front();
                         count.value = std::any_cast<float>(count.value) - 1;
@@ -842,7 +843,6 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
     
                         Token block;
                         block.type = TokenType::LOOP_BLOCK;
-                        block.value = TokenTypeString[TokenType::LOOP_BLOCK];
                         push_list(stack, {block});
                         break;
                     }
@@ -850,27 +850,26 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                     case CommandEnum::WHILE:
                     {
                         std::vector<Token> list = pop_list(stack);
-    
-                        if (list.empty() || list.front().type != TokenType::DATA_Bool)
+
+                        if (list.size() == 1 && list.back().type == TokenType::DATA_Bool)
                         {
+                            if (std::any_cast<bool>(list.back().value) == false)
+                            {
+                                current = current->alt_next->default_next;
+                                skip_end = true;
+                                break;
+                            }
+                        } else {
                             exception = true;
                             exception_message = "Expected a single element list, containing a boolean value.";
                             exception_message += "\nA leading tag may be used as a way to access this value.";
                             break;
                         }
-    
-                        if (std::any_cast<bool>(list.front().value) == false)
-                        {
-                            current = current->alt_next->default_next;
-                            skip_end = true;
-                            break;
-                        }
-    
+
                         push_list(stack, reverse_list(list));
     
                         Token block;
                         block.type = TokenType::LOOP_BLOCK;
-                        block.value = TokenTypeString[TokenType::LOOP_BLOCK];
                         push_list(stack, {block});
                         break;
                     }                   
@@ -879,116 +878,124 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                     {
                         std::vector<Token> list = reverse_list(pop_list(stack));
     
-                        if (list.empty() || list.size() < 3)
+                        if (list.size() >= 3 && list.size() <= 4)
                         {
-                            exception = true;
-                            exception_message = "Expected a list of 3 numeric values.";
-                            exception_message += "\nList may begin with a tag to access the counter.";
-                            break;
-                        }
-    
-                        Token step = list.back();
-                        list.pop_back();
-                        step = get_tag(stack, step);
-                        if (step.type != TokenType::DATA_Number)
-                        {
-                            exception = true;
-                            exception_message = "Expected a Number for step.";
-                            break;
-                        }
-    
-                        Token end_val = list.back();
-                        list.pop_back();
-                        end_val = get_tag(stack, end_val);
-                        if (end_val.type != TokenType::DATA_Number)
-                        {
-                            exception = true;
-                            exception_message = "Expected a Number for end value.";
-                            break;
-                        }
-    
-                        Token current_val = list.back();
-                        list.pop_back();
-                        current_val = get_tag(stack, current_val);
-                        if (current_val.type != TokenType::DATA_Number)
-                        {
-                            exception = true;
-                            exception_message = "Expected a Number for start value.";
-                            break;
-                        }
-    
-                        Token tag;
-                        tag.type = TokenType::NULL_TOKEN;
-    
-                        if (!list.empty())
-                        {
-                            tag = list.back();
+                            Token step = list.back();
                             list.pop_back();
-                        }
+                            step = get_tag(stack, step);
+                            float step_f;
+
+                            Token end_val = list.back();
+                            list.pop_back();
+                            end_val = get_tag(stack, end_val);
+                            float end_f;
+
+                            Token current_val = list.back();
+                            list.pop_back();
+                            current_val = get_tag(stack, current_val);
+                            float current_f;
+
+                            if (step.type == TokenType::DATA_Number)
+                                step_f = std::any_cast<float>(step.value);
+                            else
+                            {
+                                exception = true;
+                                exception_message = "Expected a Number for step.";
+                                break;
+                            }
+
+                            if (end_val.type == TokenType::DATA_Number)
+                                end_f = std::any_cast<float>(end_val.value);
+                            else
+                            {
+                                exception = true;
+                                exception_message = "Expected a Number for end value.";
+                                break;
+                            }
     
-                        if (std::any_cast<float>(step.value) < 0)
-                        {
-                            if (std::any_cast<float>(current_val.value) <= std::any_cast<float>(end_val.value))
+                            if (current_val.type == TokenType::DATA_Number)
+                                current_f = std::any_cast<float>(current_val.value);
+                            else
+                            {
+                                exception = true;
+                                exception_message = "Expected a Number for start value.";
+                                break;
+                            }
+
+                            Token tag;
+                            tag.type = TokenType::NULL_TOKEN;
+    
+                            if (!list.empty())
+                            {
+                                tag = list.back();
+                                list.pop_back();
+                            }
+    
+                            if (step_f < 0)
+                            {
+                                if (current_f <= end_f)
+                                {
+                                    current = current->alt_next->default_next;
+                                    skip_end = true;
+                                    break;
+                                }
+                            } else if (current_f >= end_f)
                             {
                                 current = current->alt_next->default_next;
                                 skip_end = true;
                                 break;
                             }
-                        } else {
-                            if (std::any_cast<float>(current_val.value) >= std::any_cast<float>(end_val.value))
-                            {
-                                current = current->alt_next->default_next;
-                                skip_end = true;
-                                break;
-                            }
-                        }
     
-                        current_val.value = std::any_cast<float>(current_val.value) + std::any_cast<float>(step.value);
+                            current_val.value = current_f + step_f;
     
-                        Token block;
-                        block.type = TokenType::LOOP_BLOCK;
-                        block.value = TokenTypeString[TokenType::LOOP_BLOCK];
+                            Token block;
+                            block.type = TokenType::LOOP_BLOCK;
+                            block.value = TokenTypeString[TokenType::LOOP_BLOCK];
                         
-                        if (tag.type != TokenType::NULL_TOKEN)
-                            push_list(stack, {tag, current_val, end_val, step});
-                        else
-                            push_list(stack, {current_val, end_val, step});
+                            if (tag.type != TokenType::NULL_TOKEN)
+                                push_list(stack, {tag, current_val, end_val, step});
+                            else
+                                push_list(stack, {current_val, end_val, step});
     
-                        push_list(stack, {block});
+                            push_list(stack, {block});
+                            break;
+                        }
+
+                        exception = true;
+                        exception_message = "Expected a list of 3 numeric values.";
+                        exception_message += "\nList may begin with a tag to access the counter.";
                         break;
                     }
 
                     case CommandEnum::DEFUNC:
                     {
-                        if (temp.type != TokenType::USER_FUNCTION)
+                        if (temp.type == TokenType::USER_FUNCTION)
                         {
+                            if (functions.count(std::any_cast<std::string>(temp.value)) == 0)
+                            {
+                                std::vector<Token> function_args = pop_list(stack);
+                                Function new_func;
+                                new_func.location = current;
+                                new_func.argument_tags = new Token[function_args.size()];
+                                new_func.arg_count = function_args.size();
+    
+                                for (int i = 0; i < new_func.arg_count; i++)
+                                    new_func.argument_tags[i] = function_args[i];
+    
+                                functions.insert({std::any_cast<std::string>(temp.value), new_func});
+                                temp.type = TokenType::NULL_TOKEN;
+                                current = current->alt_next;
+                                break;
+                            } else {
+                                exception = true;
+                                exception_message = "Duplicate definition: " + std::any_cast<std::string>(temp.value);
+                                break;
+                            }
+                        } else {
                             exception = true;
                             exception_message = "User function identifier not provided";
                             break;
                         }
-
-                        if (functions.count(std::any_cast<std::string>(temp.value)) > 0)
-                        {
-                            exception = true;
-                            exception_message = "Duplicate definition: " + std::any_cast<std::string>(temp.value);
-                            break;
-                        }
-
-                        std::vector<Token> function_args = pop_list(stack);
-                        Function new_func;
-                        new_func.location = current;
-                        new_func.argument_tags = new Token[function_args.size()];
-                        new_func.arg_count = function_args.size();
-    
-                        for (int i = 0; i < new_func.arg_count; i++)
-                        {
-                            new_func.argument_tags[i] = function_args[i];
-                        }
-    
-                        functions.insert({std::any_cast<std::string>(temp.value), new_func});
-                        temp.type = TokenType::NULL_TOKEN;
-                        current = current->alt_next;
-                        break;
                     }
 
                     case CommandEnum::CHACHE:
@@ -1037,31 +1044,35 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                                 push_list(stack, ret_list);
 
                             break;
-                        }
-
-                        if (command == "end")
+                        } else if (command == "end")
                         {
                             std::string target = std::any_cast<std::string>(current->alt_next->t.value);
                             std::vector<Token> list = pop_list(stack);
         
-                            if (target == "if" || target == "?")
+                            switch (get_command_enum(target))
                             {
-                                while (!list.empty() && list.back().type != TokenType::CONDITION_BLOCK)
-                                    list = reverse_list(pop_list(stack));
-                            } else if (target == "begin")
-                            {
-                                while (!list.empty() && list.back().type != TokenType::BLOCK)
-                                    list = reverse_list(pop_list(stack));
-                            } else if (target == "loop" || target == "while" || target == "for")
-                            {
-                                while (!list.empty() && list.back().type != TokenType::LOOP_BLOCK)
-                                    list = reverse_list(pop_list(stack));
+                                case CommandEnum::IF:
+                                case CommandEnum::ERROR_HANDLER:
+                                    while (!list.empty() && list.back().type != TokenType::CONDITION_BLOCK)
+                                        list = reverse_list(pop_list(stack));
+                                    break;
+                                case CommandEnum::BEGIN:
+                                    while (!list.empty() && list.back().type != TokenType::BLOCK)
+                                        list = reverse_list(pop_list(stack));
+                                    break;
+                                case CommandEnum::LOOP:
+                                case CommandEnum::WHILE:
+                                case CommandEnum::FOR:
+                                    while (!list.empty() && list.back().type != TokenType::LOOP_BLOCK)
+                                        list = reverse_list(pop_list(stack));
 
-                                current = current->alt_next;
-                                skip_end = true;
-                                break;
+                                    current = current->alt_next;
+                                    skip_end = true;
+                                    break;
+
+                                default:
+                                    break;
                             }
-                            break;
                         }
                         break;
                     }
@@ -1118,49 +1129,60 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
 
                     case CommandEnum::DUP:
                     {
-                        Token tok = stack.back();
-                        append_list(stack, {tok});
+                        if (!stack.empty())
+                        {
+                            Token tok = stack.back();
+                            stack.push_back(tok);
+                        } else {
+                            exception = true;
+                            exception_message = "Empty stack.";
+                        }
+
                         break;
                     }
 
                     case CommandEnum::DUP_X:
                     {
-                        std::vector<Token> x = pop_list(stack);
-                        if (x.size() != 1 || x.front().type != TokenType::DATA_Number)
+                        std::vector<Token> list = pop_list(stack);
+                        Token count;
+
+                        if (list.size() == 1)
+                            count = list.back();
+
+                        if (count.type == TokenType::DATA_Number)
                         {
+                            for (int i = 0; i < int(std::any_cast<float>(count.value)); i++)
+                                stack.push_back(stack.back());
+                        } else {
                             exception = true;
-                            exception_message = "Expected one integer value.";
+                            exception_message = get_token_string(count) + ": Expected one integer value.";
                             break;
                         }
-    
-                        Token tok = stack.back();
-    
-                        for (int i = 0; i < int(std::any_cast<float>(x.front().value)); i++)
-                            append_list(stack, {tok});
-    
                         break;
                     }
 
                     case CommandEnum::DEFINE:
                     {
-                        if (temp.type != TokenType::CONSTANT)
-                        {
+                        Token constant;
+
+                        if (temp.type == TokenType::CONSTANT)
+                            constant = temp;
+                        else {
                             exception = true;
                             exception_message = "Constant identifier not provided";
                             break;
                         }
 
-                        if (constants.count(std::any_cast<std::string>(temp.value)) > 0)
+                        if (constants.count(std::any_cast<std::string>(constant.value)) == 0)
                         {
+                            std::vector<Token> val = pop_list(stack);
+                            constants.insert({std::any_cast<std::string>(constant.value), val.back()});
+                            temp.type = TokenType::NULL_TOKEN;
+                        } else {
                             exception = true;
                             exception_message = "Constant already exists.";
                             break;
                         }
-
-                        std::vector<Token> val = pop_list(stack);
-                        constants.insert({std::any_cast<std::string>(temp.value), val.back()});
-                        temp.type = TokenType::NULL_TOKEN;
-    
                         break;
                     }
 
@@ -1218,32 +1240,31 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                             break;
     
                         Node* new_nodes = tokenize(new_code.c_str());
-    
-                        if (!lex(new_nodes))
+
+                        if (lex(new_nodes))
                         {
+                            if (parse(new_nodes))
+                            {
+                                Node* next_half = current->default_next;
+                                current->default_next = new_nodes;
+    
+                                Node* last_node = current;
+    
+                                while (last_node->default_next != nullptr)
+                                    last_node = last_node->default_next;
+    
+                                last_node->default_next = next_half;
+                            } else {
+                                exception = true;
+                                exception_message = "Parsing failed.";
+                                break;
+                            }
+                        } else {
                             exception = true;
                             exception_message = "Lexical analysis failed.";
                             break;
                         }
-    
-                        if (!parse(new_nodes))
-                        {
-                            exception = true;
-                            exception_message = "Parsing failed.";
-                            break;
-                        }
-    
-                        Node* next_half = current->default_next;
-                        current->default_next = new_nodes;
-    
-                        Node* last_node = current;
-    
-                        while (last_node->default_next != nullptr)
-                        {
-                            last_node = last_node->default_next;
-                        }
-    
-                        last_node->default_next = next_half;
+
                         break;
                     }
 
@@ -1280,6 +1301,7 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                     push_list(function_args, {functions.at(command).argument_tags[i]});
                     append_list(function_args, reverse_list(pop_list(stack)));
                 }
+
                 Token func;
                 func.type = TokenType::FUNCTION_CALL;
                 func.value = current->default_next;
@@ -1295,10 +1317,7 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
 
         if (exception == true)
         {
-            if (current->default_next == nullptr)
-                break;
-
-            if (current->default_next->t.type == TokenType::COMMAND)
+            if (current->default_next != nullptr && current->default_next->t.type == TokenType::COMMAND)
             {
                 if (std::any_cast<std::string>(current->default_next->t.value) == "?")
                 {

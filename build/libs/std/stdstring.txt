@@ -2,68 +2,60 @@ $ (get-length) [<..text>] defunc
     [<..length> 0]
 
     [true] while
-        [<..text>] at get {<..length>} at ?
+        [<..text>] get {<..length>} at ?
             break
         end
 
-        drop-list
-
         [<..length>] [<..length> 1] + =
     end
+
+    drop-list
     
-    [<..length>] at get return
+    swap drop return
 end
 
 $ (get-next-token) [<..text> <..start> <..delim>] defunc
     [<..result> ""]
-    [<..index>] [<..start>] at get
+    [<..index>] [<..start>] get merge
 
     # start at <..start> - 1, go till <..text> length, and step by one.
-    [<..i>] [<..start>] at get {1} - [<..text>] at get (get-length) [3] merge-x {1} for
-        [<..text>] at get {<..i>} at ?
-            [<..index>] [<..i>] at get =
+    [<..i>] [<..start>] get {1} - [<..text>] get (get-length) [3] merge-x {1} for
+        [<..text>] get {<..i>} at ?
+            [<..index>] [<..i>] get =
             break
         end
 
-        [<!c>] [<..text>] at get {<..i>} at merge
+        [<!c>] [<..text>] get {<..i>} at merge
 
         [<!c> <..delim>] == if
-            [<..index>] [<..i>] at get =
+            [<..index>] [<..i>] get =
             break
         end
 
         [<..result>] [<..result> <!c>] + =
     end
 
-    [<.text>] [<..result>] at get {<.index>} [<..index>] at get [3] merge-x return
+    [<.text>] [<..result>] get {<.index>} [<..index>] get [3] merge-x return
 end
 
 $ (tokenize) [<..input> <..delim>] defunc
-    [<..length>] [<..input>] at get (get-length) merge
+    [<..length>] [<..input>] get (get-length) merge
     [<..count> 0]
+
     [<..current> ""] [<..length>] at get dup-x
-    [<..text> ""]
 
-    [<..i> -1] [<..length>] at get merge {1} for
-        [<..i>] at
-        [<..input>] at get [<..i>] at get [<..delim>] at get (get-next-token) merge
-            [<.text>] at [<..text>] swap-list get =
-            [<.index>] at [<..i>] swap-list get =
-
-        [<..current> <..count>] at [<..text>] at get =
-        [<..text>] println
-
-        [<..delim>] at get {' '} != if
-            [<..i>] [<..i> 1] + =
-        end
+    [<..i> -1] [<..length>] get merge {1} for
+        [<..input>] get [<..i>] get [<..delim>] get (get-next-token)
+            [<.text>] get [<..current> <..count>] at swap-list =
+            [<.index>] get [<..i>] at swap-list =
         
         [<..count>] [<..count> 1] + =
     end
 
     [<..output> ""]
-    [""] [<..count>] at get dup-x drop
+    [""] [<..count>] get dup-x drop
 
-    [<..i> -1] [<..count>] at get {1} - merge {1} for
+    [<..i> -1] [<..count>] get {1} - merge {1} for
         [<..output>] at {2} + {<..i>} + [<..current> <..i>] at get =
     end
 

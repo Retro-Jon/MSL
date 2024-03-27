@@ -165,7 +165,11 @@ bool lex(Node* nodes)
 
             case TokenType::COMMAND:
             {
-                pointer->t.command = get_command_enum(pointer->t);
+                if (get_command_enum(std::any_cast<std::string>(pointer->t.value)) == CommandEnum::UNKNOWN_COMMAND)
+                {
+                    error_msg(pointer, "Unknown command.");
+                    return false;
+                }
                 break;
             }
 

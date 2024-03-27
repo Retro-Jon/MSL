@@ -2,6 +2,7 @@
 #include <any>
 #include <iostream>
 #include <fstream>
+#include <string>
 
 std::string load_file(const char* path)
 {
@@ -32,10 +33,8 @@ void delete_nodes(Node* pointer)
     }
 }
 
-CommandEnum get_command_enum(Token t)
+CommandEnum get_command_enum(std::string val)
 {
-    std::string val = get_token_string(t);
-
     if (val == "print")
         return CommandEnum::PRINT;
     if (val == "println")
@@ -173,16 +172,16 @@ std::string trim_num_string(std::string num)
 
     for (int i = end; i > 0; i--)
     {
-        if (num.at(i) == '0')
-            continue;
-
-        if (num.at(i) == '.')
-            i--;
+        if (num.at(i) != '0')
+        {
+            if (num.at(i) == '.')
+                i--;
         
-        // Break if 0 is not found at the current position.
+            // Break if 0 is not found at the current position.
 
-        end = i;
-        break;
+            end = i;
+            break;
+        }
     }
 
     for (int j = 0; j <= end; j++)
@@ -193,74 +192,88 @@ std::string trim_num_string(std::string num)
 
 int find_tag(std::vector<Token> list, Token tag)
 {
-    if (list.size() == 0)
+    if (list.empty())
         return -1;
 
     switch (tag.type)
     {
         case TokenType::TAG_GLOBAL:
         {
-            for (int i = 0; i < list.size() - 1; i++)
+            std::string value = std::any_cast<std::string>(tag.value);
+            for (int i = 0; i < list.size(); i++)
             {
-                if (list.at(i).type != tag.type)
-                    continue;
-                
-                if (std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
-                    return i;
-                else
-                    i += 2;
+                switch (list.at(i).type)
+                {
+                    case TokenType::TAG_GLOBAL:
+                        if (std::any_cast<std::string>(list.at(i).value) == value)
+                            return i;
+                    default:
+                        break;
+                }
             }
             break;
         }
     
         case TokenType::TAG_LOCAL:
         {
+            std::string value = std::any_cast<std::string>(tag.value);
             int pos = -1;
             for (int i = list.size() - 1; i >= 0; i--)
             {
-                if (list.at(i).type == TokenType::FUNCTION_CALL)
-                    break;
-                if (list.at(i).type != tag.type)
-                    continue;
-                if (std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
-                    pos = i;
-                else
-                    i--;
+                switch (list.at(i).type)
+                {
+                    case TokenType::TAG_LOCAL:
+                        if (std::any_cast<std::string>(list.at(i).value) == value)
+                            pos = i;
+                        break;
+                    case TokenType::FUNCTION_CALL:
+                        return pos;
+                    default:
+                        break;
+                }
             }
-            return pos;
             break;
         }
 
         case TokenType::TAG_BLOCK:
         {
+            std::string value = std::any_cast<std::string>(tag.value);
             int pos = -1;
             for (int i = list.size() - 1; i >= 0; i--)
             {
-                if (list.at(i).type == TokenType::LOOP_BLOCK || list.at(i).type == TokenType::CONDITION_BLOCK || list.at(i).type == TokenType::BLOCK)
-                    break;
-                if (list.at(i).type != tag.type)
-                    continue;
-                if (std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
-                    pos = i;
-                else
-                    i -= 2;
+                switch (list.at(i).type)
+                {
+                    case TokenType::TAG_BLOCK:
+                        if (std::any_cast<std::string>(list.at(i).value) == value)
+                            pos = i;
+                        break;
+                    case TokenType::LOOP_BLOCK:
+                    case TokenType::CONDITION_BLOCK:
+                    case TokenType::BLOCK:
+                        return pos;
+                    default:
+                        break;
+                }
             }
-            return pos;
             break;
         }
     
         case TokenType::TAG_MEMBER:
         {
+            std::string value = std::any_cast<std::string>(tag.value);
             for (int i = list.size() - 1; i >= 0; i--)
             {
-                if (list.at(i).type == TokenType::LIST_START)
-                    break;
-                if (list.at(i).type != tag.type)
-                    continue;
-                if (std::any_cast<std::string>(list.at(i).value) == std::any_cast<std::string>(tag.value))
-                    return i;
-                else
-                    i--;
+                switch (list.at(i).type)
+                {
+                    case TokenType::TAG_MEMBER:
+                        if (std::any_cast<std::string>(list.at(i).value) == value)
+                            return i;
+                        break;
+                    case TokenType::LIST_START:
+                        return -1;
+                    default:
+                        break;
+                }
             }
             break;
         }
@@ -274,17 +287,30 @@ int find_tag(std::vector<Token> list, Token tag)
 
 bool is_tag(Token t)
 {
-    if (t.type == TokenType::TAG_GLOBAL || t.type == TokenType::TAG_LOCAL || t.type == TokenType::TAG_BLOCK || t.type == TokenType::TAG_MEMBER)
-        return true;
-
-    return false;
+    switch (t.type)
+    {
+        case TokenType::TAG_GLOBAL:
+        case TokenType::TAG_LOCAL:
+        case TokenType::TAG_BLOCK:
+        case TokenType::TAG_MEMBER:
+            return true;
+        default:
+            return false;
+    }
 }
 
 bool is_value(Token t)
 {
-    if (t.type > TokenType::NULL_TOKEN && t.type <= TokenType::DATA_Bool)
-        return true;
-    return false;
+    switch (t.type)
+    {
+        case TokenType::DATA_String:
+        case TokenType::DATA_Char:
+        case TokenType::DATA_Number:
+        case TokenType::DATA_Bool:
+            return true;
+        default:
+            return false;
+    }
 }
 
 void error_msg(Node* node, const char* explanation)

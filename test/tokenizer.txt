@@ -13,5 +13,5 @@ $ _lorem_ ["Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eius
 #    exit
 #end
 
-[<input>] at get [' '] (tokenize) println
+[<input>] get [' '] (tokenize) println
 
