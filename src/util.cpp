@@ -134,10 +134,7 @@ std::string get_token_string(Token t)
             break;
         
         case TokenType::DATA_Bool:
-            if (std::any_cast<bool>(t.value) == true)
-                result = "true";
-            else if (std::any_cast<bool>(t.value) == false)
-                result = "false";
+            result = (std::any_cast<bool>(t.value) == true) ? "true" : "false";
             break;
         
         case TokenType::LIST_START:
@@ -174,12 +171,7 @@ std::string trim_num_string(std::string num)
     {
         if (num.at(i) != '0')
         {
-            if (num.at(i) == '.')
-                i--;
-        
-            // Break if 0 is not found at the current position.
-
-            end = i;
+            end = (num.at(i) == '.') ? i - 1 : i;
             break;
         }
     }
@@ -190,7 +182,7 @@ std::string trim_num_string(std::string num)
     return res;
 }
 
-int find_tag(std::vector<Token> list, Token tag)
+int find_tag(std::vector<Token> list, Token tag, std::vector<int> function_calls)
 {
     if (list.empty())
         return -1;
@@ -199,13 +191,13 @@ int find_tag(std::vector<Token> list, Token tag)
     {
         case TokenType::TAG_GLOBAL:
         {
-            std::string value = std::any_cast<std::string>(tag.value);
+            std::string value = get_token_string(tag);
             for (int i = 0; i < list.size(); i++)
             {
                 switch (list.at(i).type)
                 {
                     case TokenType::TAG_GLOBAL:
-                        if (std::any_cast<std::string>(list.at(i).value) == value)
+                        if (get_token_string(list.at(i)) == value)
                             return i;
                     default:
                         break;
@@ -216,14 +208,15 @@ int find_tag(std::vector<Token> list, Token tag)
     
         case TokenType::TAG_LOCAL:
         {
-            std::string value = std::any_cast<std::string>(tag.value);
+            std::string value = get_token_string(tag);
             int pos = -1;
+
             for (int i = list.size() - 1; i >= 0; i--)
             {
                 switch (list.at(i).type)
                 {
                     case TokenType::TAG_LOCAL:
-                        if (std::any_cast<std::string>(list.at(i).value) == value)
+                        if (get_token_string(list.at(i)) == value)
                             pos = i;
                         break;
                     case TokenType::FUNCTION_CALL:
@@ -232,6 +225,8 @@ int find_tag(std::vector<Token> list, Token tag)
                         break;
                 }
             }
+
+            return pos;
             break;
         }
 
@@ -244,8 +239,7 @@ int find_tag(std::vector<Token> list, Token tag)
                 switch (list.at(i).type)
                 {
                     case TokenType::TAG_BLOCK:
-                        if (std::any_cast<std::string>(list.at(i).value) == value)
-                            pos = i;
+                        pos = (get_token_string(list.at(i)) == value) ? i : pos;
                         break;
                     case TokenType::LOOP_BLOCK:
                     case TokenType::CONDITION_BLOCK:
@@ -266,7 +260,7 @@ int find_tag(std::vector<Token> list, Token tag)
                 switch (list.at(i).type)
                 {
                     case TokenType::TAG_MEMBER:
-                        if (std::any_cast<std::string>(list.at(i).value) == value)
+                        if (get_token_string(list.at(i)) == value)
                             return i;
                         break;
                     case TokenType::LIST_START:

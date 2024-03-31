@@ -16,22 +16,15 @@ Node* tokenize(const char* code)
 
     for (char c : code_string)
     {
-        if (c == '\n')
-            line_count++;
+        line_count += (c == '\n') ? 1 : 0;
 
-        if (c == '#' && !in_string)
-            in_comment = true;
+        in_comment = (c == '#' && !in_string) ? true : (c == '\n' && in_comment) ? false : in_comment;
         
-        if (c == '\n' && in_comment)
-            in_comment = false;
-        else if (in_comment)
+        if (in_comment)
             continue;
         
-        if (c == '\"' && !in_char)
-            in_string = !in_string;
-        
-        if (c == '\'' && !in_string)
-            in_char = !in_char;
+        in_string = (c == '\"' && !in_char) ? !in_string : in_string;
+        in_char = (c == '\'' && !in_string) ? !in_char : in_char;
         
         if ((c != ' ' && c != '[' && c != ']' && c != '{' && c != '}' && c != '\n') || (in_string || in_char))
             current += c;

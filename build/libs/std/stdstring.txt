@@ -42,21 +42,24 @@ $ (tokenize) [<..input> <..delim>] defunc
     [<..length>] [<..input>] get (get-length) merge
     [<..count> 0]
 
-    [<..current> ""] [<..length>] at get dup-x
+    [<..current> ""] [<..length>] get dup-x
 
     [<..i> -1] [<..length>] get merge {1} for
         [<..input>] get [<..i>] get [<..delim>] get (get-next-token)
             [<.text>] get [<..current> <..count>] at swap-list =
-            [<.index>] get [<..i>] at swap-list =
-        
+            [<.index>] get [<..i>] swap-list =
+            [<.text>] println
+
         [<..count>] [<..count> 1] + =
     end
+
+    [""] println
 
     [<..output> ""]
     [""] [<..count>] get dup-x drop
 
     [<..i> -1] [<..count>] get {1} - merge {1} for
-        [<..output>] at {2} + {<..i>} + [<..current> <..i>] at get =
+        [<..output>] at {2 <..i>} + [<..current> <..i>] at get =
     end
 
     return

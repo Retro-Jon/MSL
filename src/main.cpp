@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 
         auto stop = std::chrono::high_resolution_clock::now();
 
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
 
 //        std::cout << "\nExecution time: " << duration.count() << " microseconds" << std::endl;
     }

@@ -1,4 +1,5 @@
 #include "lang.hpp"
+#include <cctype>
 #include <set>
 
 const std::set<std::string> operators = {
@@ -29,12 +30,10 @@ bool lex(Node* nodes)
                 pointer->t.type = TokenType::SUB_LIST_END;
                 break;
             case '(':
-                if (val.back() == ')')
-                    pointer->t.type = TokenType::USER_FUNCTION;
+                pointer->t.type = (val.back() == ')') ? TokenType::USER_FUNCTION : pointer->t.type;
                 break;
             case '_':
-                if (val.back() == '_')
-                    pointer->t.type = TokenType::CONSTANT;
+                pointer->t.type = (val.back() == '_') ? TokenType::CONSTANT : pointer->t.type;
                 break;
             default:
                 break;
@@ -74,13 +73,13 @@ bool lex(Node* nodes)
                     bool not_num = false;
                     for (char c : val)
                     {
-                        if (!isdigit(c) && c != '.' && c != '-')
-                        {
-                            not_num = true;
+                        not_num = (!isdigit(c) && c != '.' && c != '-');
+
+                        if (not_num)
                             break;
-                        }
                     }
 
+                    pointer->t.type = not_num ? TokenType::DATA_Number : pointer->t.type;
                     if (not_num == false)
                         pointer->t.type = TokenType::DATA_Number;
                 }
@@ -98,10 +97,7 @@ bool lex(Node* nodes)
                         i++;
                     }
                 } else {
-                    if (operators.find(val) != operators.end())
-                        pointer->t.type = TokenType::OPERATOR;
-                    else
-                        pointer->t.type = TokenType::COMMAND;
+                    pointer->t.type = (operators.find(val) != operators.end()) ? TokenType::OPERATOR : TokenType::COMMAND;
                 }
             }
         }

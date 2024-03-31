@@ -5,5 +5,5 @@ end
 [<a>] (vector) merge [<.x>] [12] =
 [<b>] (vector) merge [<.y>] [5] =
 
-[<b>] at get-list-values println
+[<b>] at get-list println
 

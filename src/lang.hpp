@@ -64,6 +64,7 @@ enum CommandEnum
     INCLUDE,
     EXIT
 };
+
 struct Token
 {
     std::any value;
@@ -120,7 +121,7 @@ CommandEnum get_command_enum(std::string val);
 std::string get_token_string(Token t);
 std::string trim_num_string(std::string num);
 
-int find_tag(std::vector<Token> list, Token tag);
+int find_tag(std::vector<Token> list, Token tag, std::vector<int> function_calls);
 bool is_tag(Token t);
 bool is_value(Token t);
 void error_msg(Node* node, const char* explanation);
