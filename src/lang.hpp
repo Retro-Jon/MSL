@@ -67,8 +67,8 @@ enum CommandEnum
 
 struct Token
 {
-    std::any value;
     TokenType type = TokenType::NULL_TOKEN;
+    std::any value;
 };
 
 struct Node
@@ -117,11 +117,20 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
 
 std::string load_file(const char* path);
 void delete_nodes(Node* pointer);
-CommandEnum get_command_enum(std::string val);
-std::string get_token_string(Token t);
-std::string trim_num_string(std::string num);
+CommandEnum get_command_enum(const std::string val);
+std::string get_token_string(const Token t);
+std::string trim_num_string(const std::string num);
 
-int find_tag(std::vector<Token> list, Token tag, std::vector<int> function_calls);
-bool is_tag(Token t);
-bool is_value(Token t);
+int find_tag(const std::vector<Token> list, Token tag);
 void error_msg(Node* node, const char* explanation);
+
+inline bool is_tag(Token t)
+{
+    return (t.type >= TokenType::TAG_GLOBAL && t.type <= TokenType::TAG_MEMBER);
+}
+
+inline bool is_value(Token t)
+{
+    return (t.type >= TokenType::DATA_String && t.type <= TokenType::DATA_Bool);
+}
+

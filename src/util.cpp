@@ -33,7 +33,7 @@ void delete_nodes(Node* pointer)
     }
 }
 
-CommandEnum get_command_enum(std::string val)
+CommandEnum get_command_enum(const std::string val)
 {
     if (val == "print")
         return CommandEnum::PRINT;
@@ -103,7 +103,7 @@ CommandEnum get_command_enum(std::string val)
     return CommandEnum::UNKNOWN_COMMAND;
 }
 
-std::string get_token_string(Token t)
+std::string get_token_string(const Token t)
 {
     std::string result;
 
@@ -161,7 +161,7 @@ std::string get_token_string(Token t)
     return result;
 }
 
-std::string trim_num_string(std::string num)
+std::string trim_num_string(const std::string num)
 {
     std::string res = "";
 
@@ -182,7 +182,7 @@ std::string trim_num_string(std::string num)
     return res;
 }
 
-int find_tag(std::vector<Token> list, Token tag, std::vector<int> function_calls)
+int find_tag(const std::vector<Token> list, Token tag)
 {
     if (list.empty())
         return -1;
@@ -277,34 +277,6 @@ int find_tag(std::vector<Token> list, Token tag, std::vector<int> function_calls
     }
 
     return -1;
-}
-
-bool is_tag(Token t)
-{
-    switch (t.type)
-    {
-        case TokenType::TAG_GLOBAL:
-        case TokenType::TAG_LOCAL:
-        case TokenType::TAG_BLOCK:
-        case TokenType::TAG_MEMBER:
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool is_value(Token t)
-{
-    switch (t.type)
-    {
-        case TokenType::DATA_String:
-        case TokenType::DATA_Char:
-        case TokenType::DATA_Number:
-        case TokenType::DATA_Bool:
-            return true;
-        default:
-            return false;
-    }
 }
 
 void error_msg(Node* node, const char* explanation)
