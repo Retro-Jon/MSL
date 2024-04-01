@@ -19,7 +19,7 @@ std::vector<Token> reverse_list(std::vector<Token> list)
     return res;
 }
 
-void print_list(std::vector<Token> list)
+void print_list(const std::vector<Token> &list)
 {
     std::cout << "Count " << list.size() << std::endl;
 
@@ -77,13 +77,13 @@ std::vector<Token> pop_list(std::vector<Token> &stack)
     return list;
 }
 
-inline void append_list(std::vector<Token> &base, std::vector<Token> list)
+inline void append_list(std::vector<Token> &base, const std::vector<Token> &list)
 {
     for (Token t : list)
         base.push_back(t);
 }
 
-void push_list(std::vector<Token> &stack, std::vector<Token> list)
+void push_list(std::vector<Token> &stack, const std::vector<Token> &list)
 {
     if (list.empty())
         return;
@@ -99,19 +99,19 @@ void push_list(std::vector<Token> &stack, std::vector<Token> list)
     append_list(stack, list);
 }
 
-Token get_tag(std::vector<Token> list, Token tag)
+Token get_tag(const std::vector<Token> &list, const Token &tag)
 {
     int pos = find_tag(list, tag);
     return (is_tag(tag) ? ((pos >= 0 && pos < list.size() - 1) ? list.at(pos + 1) : tag) : tag);
 }
 
-inline bool check_exception(std::string &exception_message, bool condition, std::string message)
+inline bool check_exception(std::string &exception_message, const bool condition, const std::string &message)
 {
     exception_message = condition ? message : "";
     return condition;
 }
 
-bool interpret(std::string executable_path, std::string program_path, Node* program, std::vector<Token> &backup_stack)
+bool interpret(const std::string &executable_path, const std::string &program_path, Node* program, std::vector<Token> &backup_stack)
 {
     Node* current = program;
     std::string exception_message = "";
@@ -121,7 +121,6 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
     current = program;
 
     std::vector<Token> stack;
-    std::vector<int> function_calls;
     std::vector<std::string> includes;
 
     std::string stdlibpath = executable_path + "libs/std/";
@@ -811,9 +810,6 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                     {
                         if (command == "return" || (command == "end" && std::any_cast<std::string>(current->alt_next->t.value) == "defunc"))
                         {
-                            if (!function_calls.empty())
-                                function_calls.pop_back();
-
                             std::vector<Token> ret_list;
 
                             if (command == "return")
@@ -1059,11 +1055,7 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                     append_list(function_args, reverse_list(pop_list(stack)));
                 }
 
-                Token func;
-                func.type = TokenType::FUNCTION_CALL;
-                func.value = current->default_next;
-                append_list(stack, {func});
-                function_calls.push_back(stack.size() - 1);
+                append_list(stack, {{.type = TokenType::FUNCTION_CALL, .value = current->default_next}});
                 append_list(stack, function_args);
 
                 current = functions.at(command).location;
@@ -1083,12 +1075,10 @@ bool interpret(std::string executable_path, std::string program_path, Node* prog
                     continue;
                 }
             }
-
             break;
         }
 
-        if (!skip_end)
-            current = current->default_next;
+        current = !skip_end ? current->default_next : current;
     }
     
     auto stop = std::chrono::high_resolution_clock::now();

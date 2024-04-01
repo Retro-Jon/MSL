@@ -27,13 +27,13 @@ void delete_nodes(Node* pointer)
 {
     if (pointer == nullptr)
         return;
-    else {
-        delete_nodes(pointer->default_next);
-        delete pointer;
-    }
+    
+    delete_nodes(pointer->default_next);
+    delete pointer;
+    pointer = nullptr;
 }
 
-CommandEnum get_command_enum(const std::string val)
+CommandEnum get_command_enum(const std::string &val)
 {
     if (val == "print")
         return CommandEnum::PRINT;
@@ -103,14 +103,12 @@ CommandEnum get_command_enum(const std::string val)
     return CommandEnum::UNKNOWN_COMMAND;
 }
 
-std::string get_token_string(const Token t)
+std::string get_token_string(const Token &t)
 {
-    std::string result;
-
     switch (t.type)
     {
         case TokenType::NULL_TOKEN:
-            result = "NULL_TOKEN";
+            return "NULL_TOKEN";
             break;
         
         case TokenType::TAG_GLOBAL:
@@ -122,67 +120,66 @@ std::string get_token_string(const Token t)
         case TokenType::USER_FUNCTION:
         case TokenType::DATA_String:
         case TokenType::CONSTANT:
-            result = std::any_cast<std::string>(t.value);
+            return std::any_cast<std::string>(t.value);
             break;
 
         case TokenType::DATA_Char:
-            result = std::any_cast<char>(t.value);
+            return std::string("") + std::any_cast<char>(t.value);
             break;
         
         case TokenType::DATA_Number:
-            result = trim_num_string(std::to_string(std::any_cast<float>(t.value)));
+            return trim_num_string(std::to_string(std::any_cast<float>(t.value)));
             break;
         
         case TokenType::DATA_Bool:
-            result = (std::any_cast<bool>(t.value) == true) ? "true" : "false";
+            return (std::any_cast<bool>(t.value) == true) ? "true" : "false";
             break;
         
         case TokenType::LIST_START:
-            result = "[";
+            return "[";
             break;
         
         case TokenType::LIST_END:
-            result = "]";
+            return "]";
             break;
         
         case TokenType::SUB_LIST_START:
-            result = "{";
+            return "{";
             break;
         
         case TokenType::SUB_LIST_END:
-            result = "}";
+            return "}";
             break;
 
         default:
-            result = TokenTypeString[t.type];
+            return TokenTypeString[t.type];
             break;
     }
 
-    return result;
+    return "";
 }
 
-std::string trim_num_string(const std::string num)
+std::string trim_num_string(const std::string &num)
 {
     std::string res = "";
 
-    int end = num.length() - 1;
-
-    for (int i = end; i > 0; i--)
+    for (int i = num.length() - 1; i > 0; i--)
     {
         if (num.at(i) != '0')
         {
-            end = (num.at(i) == '.') ? i - 1 : i;
+            i += num.at(i) == '.' ? -1 : 0;
+
+            for (int j = 0; j <= i; j++)
+                res += num.at(j);
+
             break;
         }
     }
 
-    for (int j = 0; j <= end; j++)
-        res += num.at(j);
-
     return res;
 }
 
-int find_tag(const std::vector<Token> list, Token tag)
+int find_tag(const std::vector<Token> &list, const Token &tag)
 {
     if (list.empty())
         return -1;

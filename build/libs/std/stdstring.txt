@@ -48,12 +48,9 @@ $ (tokenize) [<..input> <..delim>] defunc
         [<..input>] get [<..i>] get [<..delim>] get (get-next-token)
             [<.text>] get [<..current> <..count>] at swap-list =
             [<.index>] get [<..i>] swap-list =
-            [<.text>] println
 
         [<..count>] [<..count> 1] + =
     end
-
-    [""] println
 
     [<..output> ""]
     [""] [<..count>] get dup-x drop

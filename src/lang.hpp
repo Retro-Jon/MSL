@@ -113,23 +113,23 @@ struct Function
 Node* tokenize(const char* code);
 bool lex(Node* Nodes);
 bool parse(Node* Nodes);
-bool interpret(std::string executable_path, std::string program_path, Node* program, std::vector<Token> &backup_stack);
+bool interpret(const std::string &executable_path, const std::string &program_path, Node* program, std::vector<Token> &backup_stack);
 
 std::string load_file(const char* path);
 void delete_nodes(Node* pointer);
-CommandEnum get_command_enum(const std::string val);
-std::string get_token_string(const Token t);
-std::string trim_num_string(const std::string num);
+CommandEnum get_command_enum(const std::string &val);
+std::string get_token_string(const Token &t);
+std::string trim_num_string(const std::string &num);
 
-int find_tag(const std::vector<Token> list, Token tag);
+int find_tag(const std::vector<Token> &list, const Token &tag);
 void error_msg(Node* node, const char* explanation);
 
-inline bool is_tag(Token t)
+inline bool is_tag(const Token &t)
 {
     return (t.type >= TokenType::TAG_GLOBAL && t.type <= TokenType::TAG_MEMBER);
 }
 
-inline bool is_value(Token t)
+inline bool is_value(const Token &t)
 {
     return (t.type >= TokenType::DATA_String && t.type <= TokenType::DATA_Bool);
 }
