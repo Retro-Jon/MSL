@@ -184,43 +184,30 @@ int find_tag(const std::vector<Token> &list, const Token &tag)
     if (list.empty())
         return -1;
 
+    std::string value = get_token_string(tag);
+    int pos = -1;
+
     switch (tag.type)
     {
         case TokenType::TAG_GLOBAL:
         {
-            std::string value = get_token_string(tag);
             for (int i = 0; i < list.size(); i++)
             {
-                switch (list.at(i).type)
-                {
-                    case TokenType::TAG_GLOBAL:
-                        if (get_token_string(list.at(i)) == value)
-                            return i;
-                    default:
-                        break;
-                }
+                if (list.at(i).type == tag.type && get_token_string(list.at(i)) == value)
+                    return i;
             }
             break;
         }
     
         case TokenType::TAG_LOCAL:
         {
-            std::string value = get_token_string(tag);
-            int pos = -1;
-
             for (int i = list.size() - 1; i >= 0; i--)
             {
-                switch (list.at(i).type)
-                {
-                    case TokenType::TAG_LOCAL:
-                        if (get_token_string(list.at(i)) == value)
-                            pos = i;
-                        break;
-                    case TokenType::FUNCTION_CALL:
-                        return pos;
-                    default:
-                        break;
-                }
+                if (list.at(i).type == TokenType::TAG_LOCAL && get_token_string(list.at(i)) == value)
+                    pos = i;
+
+                if (list.at(i).type == TokenType::FUNCTION_CALL)
+                    return pos;
             }
 
             return pos;
@@ -229,42 +216,26 @@ int find_tag(const std::vector<Token> &list, const Token &tag)
 
         case TokenType::TAG_BLOCK:
         {
-            std::string value = std::any_cast<std::string>(tag.value);
-            int pos = -1;
             for (int i = list.size() - 1; i >= 0; i--)
             {
-                switch (list.at(i).type)
-                {
-                    case TokenType::TAG_BLOCK:
-                        pos = (get_token_string(list.at(i)) == value) ? i : pos;
-                        break;
-                    case TokenType::LOOP_BLOCK:
-                    case TokenType::CONDITION_BLOCK:
-                    case TokenType::BLOCK:
-                        return pos;
-                    default:
-                        break;
-                }
+                if (list.at(i).type == TokenType::TAG_BLOCK)
+                    pos = (get_token_string(list.at(i)) == value) ? i : pos;
+                else if (list.at(i).type == TokenType::LOOP_BLOCK || list.at(i).type == TokenType::CONDITION_BLOCK || list.at(i).type == TokenType::BLOCK)
+                    return pos;
             }
             break;
         }
     
         case TokenType::TAG_MEMBER:
         {
-            std::string value = std::any_cast<std::string>(tag.value);
             for (int i = list.size() - 1; i >= 0; i--)
             {
-                switch (list.at(i).type)
+                if (list.at(i).type == TokenType::TAG_MEMBER)
                 {
-                    case TokenType::TAG_MEMBER:
-                        if (get_token_string(list.at(i)) == value)
-                            return i;
-                        break;
-                    case TokenType::LIST_START:
-                        return -1;
-                    default:
-                        break;
-                }
+                    if (get_token_string(list.at(i)) == value)
+                        return i;
+                } else if (list.at(i).type == TokenType::LIST_START)
+                    return -1;
             }
             break;
         }
@@ -273,7 +244,7 @@ int find_tag(const std::vector<Token> &list, const Token &tag)
             break;
     }
 
-    return -1;
+    return pos;
 }
 
 void error_msg(Node* node, const char* explanation)

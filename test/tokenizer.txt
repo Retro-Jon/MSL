@@ -1,4 +1,4 @@
-["stdstring.txt"] include
+@include stdstring.txt
 
 $ _lorem_ ["Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Feugiat in fermentum posuere urna nec tincidunt praesent semper feugiat. Mattis nunc sed blandit libero volutpat sed cras ornare. Amet tellus cras adipiscing enim eu turpis egestas. Sem viverra aliquet eget sit amet tellus. Sit amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar. Amet luctus venenatis lectus magna. Mi sit amet mauris commodo quis imperdiet. Nisi lacus sed viverra tellus in hac. At quis risus sed vulputate odio ut. Lorem dolor sed viverra ipsum nunc aliquet bibendum. Urna cursus eget nunc scelerisque viverra mauris in aliquam. Ultrices vitae auctor eu augue ut. Tincidunt dui ut ornare lectus. Tincidunt eget nullam non nisi est. Feugiat scelerisque varius morbi enim nunc. Aliquam malesuada bibendum arcu vitae elementum. A iaculis at erat pellentesque."] define
 

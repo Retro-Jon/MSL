@@ -1,6 +1,9 @@
 #include "lang.hpp"
+#include <iostream>
+#include <vector>
+#include <algorithm>
 
-Node* tokenize(const char* code)
+Node* tokenize(const std::string &executable_path, const std::string &program_path, const char* code)
 {
     Node* list = new Node();
     Node* pointer = list;
@@ -9,6 +12,13 @@ Node* tokenize(const char* code)
     bool in_char = false;
     bool in_string = false;
     bool in_comment = false;
+    bool in_directive = false;
+    bool in_directive_arg = false;
+    std::string directive = "";
+    std::string directive_arg = "";
+
+    std::string stdlibpath = executable_path + "libs/std/";
+    std::vector<std::string> includes;
 
     std::string code_string(code);
     code_string += "\n";
@@ -22,6 +32,59 @@ Node* tokenize(const char* code)
         
         if (in_comment)
             continue;
+
+        if (c == '@' && !in_string)
+        {
+            in_directive = true;
+            continue;
+        }
+
+        if (in_directive)
+        {
+            if (c != ' ')
+                directive += c;
+            else
+            {
+                in_directive = false;
+                in_directive_arg = true;
+            }
+            continue;
+        } else if (in_directive_arg)
+        {
+            if (c != '\n')
+            {
+                directive_arg += c;
+                continue;
+            }
+            
+            in_directive_arg = false;
+        }
+
+        if (!directive.empty())
+        {
+            if (directive == "include" && std::find(includes.begin(), includes.end(), directive_arg) == includes.end())
+            {
+                includes.push_back(directive_arg);
+    
+                std::string file_path;
+
+                if (directive_arg.substr(0, 3) == "std")
+                    file_path = stdlibpath + directive_arg;
+                else
+                    file_path = program_path + directive_arg;
+                
+                std::string file_content = load_file(file_path.c_str());
+                Node* new_nodes = tokenize(executable_path, program_path, file_content.c_str());
+                pointer->default_next = new_nodes;
+
+                while (pointer->default_next != nullptr)
+                    pointer = pointer->default_next;
+            }
+
+            directive.clear();
+            directive_arg.clear();
+            continue;
+        }
         
         in_string = (c == '\"' && !in_char) ? !in_string : in_string;
         in_char = (c == '\'' && !in_string) ? !in_char : in_char;

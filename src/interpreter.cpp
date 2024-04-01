@@ -48,24 +48,28 @@ void print_list(const std::vector<Token> &list)
     std::cout << (match ? "\n...\n" + std::to_string(i) + " : " + last_item : "") << std::endl;
 }
 
+inline bool is_stack_break(const Token &tok)
+{
+    return tok.type == TokenType::FUNCTION_CALL || tok.type == TokenType::CONDITION_BLOCK || tok.type == TokenType::BLOCK || tok.type == TokenType::LOOP_BLOCK;
+}
+
 std::vector<Token> pop_list(std::vector<Token> &stack)
 {
     std::vector<Token> list;
-    bool end = false;
 
-    while (!stack.empty() && stack.back().type != TokenType::LIST_START && stack.back().type != TokenType::FUNCTION_CALL)
+    while (!stack.empty() && stack.back().type != TokenType::LIST_START && !is_stack_break(stack.back()))
     {
         list.push_back(stack.back());
         stack.pop_back();
     }
 
-    if (!stack.empty())
-    {
-        if (stack.back().type == TokenType::FUNCTION_CALL)
-            list.push_back(stack.back());
+    if (stack.empty())
+        return list;
 
-        stack.pop_back();
-    }
+    if (is_stack_break(stack.back()))
+        list.push_back(stack.back());
+
+    stack.pop_back();
 
     return list;
 }
@@ -81,13 +85,8 @@ void push_list(std::vector<Token> &stack, const std::vector<Token> &list)
     if (list.empty())
         return;
 
-    if (list.front().type != TokenType::FUNCTION_CALL)
-    {
-        Token start;
-        start.type = TokenType::LIST_START;
-        start.value = "[";
-        append_list(stack, {start});
-    }
+    if (!is_stack_break(list.back()))
+        stack.push_back({.type = TokenType::LIST_START, .value = "["});
 
     append_list(stack, list);
 }
@@ -978,7 +977,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                             if (file_name.substr(0, 3) == "std")
                                 file_path = stdlibpath + file_name;
                             else
-                                file_path = program_path  + file_name;
+                                file_path = program_path + file_name;
                         
                             std::string file_content = load_file(file_path.c_str());
                             
@@ -992,7 +991,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         if (!exception_message.empty())
                             break;
     
-                        Node* new_nodes = tokenize(new_code.c_str());
+                        Node* new_nodes = tokenize(executable_path, program_path, new_code.c_str());
 
                         if (lex(new_nodes))
                         {

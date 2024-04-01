@@ -20,7 +20,7 @@ int main(int argc, char** argv)
         std::vector<Token> stack;
         auto start = std::chrono::high_resolution_clock::now();
     
-        Node* program = tokenize(code.c_str());
+        Node* program = tokenize(executable_path, program_path, code.c_str());
         if (lex(program))
             if (parse(program))
                 interpret(executable_path, program_path, program, stack);
@@ -49,7 +49,7 @@ int main(int argc, char** argv)
             std::cout << "\nEnter commands:\n\n> ";
             std::getline(std::cin, input);
 
-            Node* program = tokenize(input.c_str());
+            Node* program = tokenize(executable_path, program_path, input.c_str());
             if (lex(program))
                 if (parse(program))
                     interpret(executable_path, program_path, program, stack);

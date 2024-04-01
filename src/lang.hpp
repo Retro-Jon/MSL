@@ -110,7 +110,7 @@ struct Function
     int arg_count = 0;
 };
 
-Node* tokenize(const char* code);
+Node* tokenize(const std::string &executable_path, const std::string &program_path, const char* code);
 bool lex(Node* Nodes);
 bool parse(Node* Nodes);
 bool interpret(const std::string &executable_path, const std::string &program_path, Node* program, std::vector<Token> &backup_stack);
