@@ -30,29 +30,22 @@ void print_list(const std::vector<Token> &list)
 
     std::string last_item = "";
     bool match = false;
+    std::string item;
 
     for (Token t : list)
     {
-        std::string item = get_token_string(t);
+        item = get_token_string(t);
 
         if (item != last_item)
-        {
-            if (match)
-                std::cout << "\n...";
-
-            std::cout << "\n" << i << " : " << item << " ";
-        }
+            std::cout << (match ? "\n..." : "") << "\n" << i << " : " << item << " ";
 
         match = (item == last_item);
 
-        ++i;
+        i++;
         last_item = item;
     }
 
-    if (match)
-        std::cout << "\n...\n" << i << " : " << last_item << " ";
-
-    std::cout << std::endl;
+    std::cout << (match ? "\n...\n" + std::to_string(i) + " : " + last_item : "") << std::endl;
 }
 
 std::vector<Token> pop_list(std::vector<Token> &stack)
