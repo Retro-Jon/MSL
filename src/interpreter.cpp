@@ -37,7 +37,12 @@ void print_list(const std::vector<Token> &list)
         item = get_token_string(t);
 
         if (item != last_item)
-            std::cout << (match ? "\n..." : "") << "\n" << i << " : " << item << " ";
+        {
+            if (match)
+                std::cout << "...\n";
+
+            std::cout << i << " : " << item << std::endl;
+        }
 
         match = (item == last_item);
 
@@ -45,7 +50,10 @@ void print_list(const std::vector<Token> &list)
         last_item = item;
     }
 
-    std::cout << (match ? "\n...\n" + std::to_string(i) + " : " + last_item : "") << std::endl;
+    if (match)
+        std::cout << "\n...\n" << std::to_string(i) << " : " << last_item;
+    
+    std::cout << std::endl;
 }
 
 inline bool is_stack_break(const Token &tok)
@@ -63,13 +71,13 @@ std::vector<Token> pop_list(std::vector<Token> &stack)
         stack.pop_back();
     }
 
-    if (stack.empty())
-        return list;
+    if (!stack.empty())
+    {
+        if (is_stack_break(stack.back()))
+            list.push_back(stack.back());
 
-    if (is_stack_break(stack.back()))
-        list.push_back(stack.back());
-
-    stack.pop_back();
+        stack.pop_back();
+    }
 
     return list;
 }
@@ -82,10 +90,7 @@ inline void append_list(std::vector<Token> &base, const std::vector<Token> &list
 
 void push_list(std::vector<Token> &stack, const std::vector<Token> &list)
 {
-    if (list.empty())
-        return;
-
-    if (!is_stack_break(list.back()))
+    if (!list.empty() && !is_stack_break(list.back()))
         stack.push_back({.type = TokenType::LIST_START, .value = "["});
 
     append_list(stack, list);
@@ -93,8 +98,11 @@ void push_list(std::vector<Token> &stack, const std::vector<Token> &list)
 
 Token get_tag(const std::vector<Token> &list, const Token &tag)
 {
+    if (!is_tag(tag))
+        return tag;
+
     int pos = find_tag(list, tag);
-    return (is_tag(tag) ? ((pos >= 0 && pos < list.size() - 1) ? list.at(pos + 1) : tag) : tag);
+    return (pos >= 0 && pos < list.size() - 1) ? list.at(pos + 1) : tag;
 }
 
 inline bool check_exception(std::string &exception_message, const bool condition, const std::string &message)
@@ -213,7 +221,12 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                     if (check_exception(exception_message, destination.size() != 1, "Expected a single integer value or tag as the destination."))
                         break;
 
-                    pos = is_tag(destination.back()) ? find_tag(stack, destination.back()) + 1 : destination.back().type == TokenType::DATA_Number ? std::any_cast<float>(destination.back().value) : -1;
+                    pos = -1;
+
+                    if (is_tag(destination.back()))
+                        pos = find_tag(stack, destination.back()) + 1;
+                    else if (destination.back().type == TokenType::DATA_Number)
+                        pos = int(std::any_cast<float>(destination.back().value));
 
                     if (check_exception(exception_message, pos < 0 || pos >= stack.size(), "Position not on stack"))
                         break;
@@ -664,9 +677,8 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
                         Token count = list.front();
                         count.value = std::any_cast<float>(count.value) - 1;
-                        push_list(stack, {count});
     
-                        push_list(stack, {{.type = TokenType::LOOP_BLOCK, .value = TokenTypeString[TokenType::LOOP_BLOCK]}});
+                        push_list(stack, {count, {.type = TokenType::LOOP_BLOCK, .value = TokenTypeString[TokenType::LOOP_BLOCK]}});
                         break;
                     }
 
