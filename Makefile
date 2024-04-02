@@ -2,9 +2,15 @@ CC = g++
 SRC = $(wildcard src/*.cpp)
 BUILD = build/test.exe
 
-debug:
-	$(CC) $(SRC) -o $(BUILD) -g
+debug-linux:
+	$(CC) -D LINUX $(SRC) -o $(BUILD) -g
 
-release:
-	$(CC) $(SRC) -o $(BUILD) -Ofast
+debug-windows:
+	$(CC) -D WINDOWS $(SRC) -o $(BUILD) -g
+
+release-linux:
+	$(CC) -D LINUX $(SRC) -o $(BUILD) -Ofast
+
+release-windows:
+	$(CC) -D WINDOWS $(SRC) -o $(BUILD) -Ofast
 

@@ -3,8 +3,6 @@
 #include <chrono>
 #include <unistd.h>
 
-#define LINUX
-
 #ifdef LINUX
 #include <linux/limits.h>
 
