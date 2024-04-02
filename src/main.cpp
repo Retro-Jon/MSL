@@ -3,6 +3,8 @@
 #include <chrono>
 #include <unistd.h>
 
+std::string getexepath();
+
 #ifdef LINUX
 #include <linux/limits.h>
 
@@ -11,7 +13,7 @@ std::string getexepath()
     char buffer[PATH_MAX];
     ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) -1);
     std::string result = std::string(buffer, len);
-    while (result.back() != '/' && result.back() != '\\')
+    while (!result.empty() && result.back() != '/' && result.back() != '\\')
         result.erase(result.length() - 1, 1);
 
     return result;
@@ -26,7 +28,7 @@ std::string getexepath()
     char buffer[MAX_PATH];
     GetModuleFileName(NULL, buffer, MAX_PATH);
     std::string result = std::string(buffer, sizeof buffer);
-    while (result.back() != '/' && result.back() != '\\')
+    while (!result.empty() && result.back() != '/' && result.back() != '\\')
         result.erase(result.length() - 1, 1);
 
     return result;
