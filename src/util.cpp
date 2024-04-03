@@ -136,19 +136,19 @@ std::string get_token_string(const Token &t)
             break;
         
         case TokenType::LIST_START:
-            return "[";
+            return "LIST_START";
             break;
         
         case TokenType::LIST_END:
-            return "]";
+            return "LIST_END";
             break;
         
         case TokenType::SUB_LIST_START:
-            return "{";
+            return "SUB_LIST_START";
             break;
         
         case TokenType::SUB_LIST_END:
-            return "}";
+            return "SUB_LIST_END";
             break;
 
         default:
