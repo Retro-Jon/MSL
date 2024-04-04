@@ -3,6 +3,8 @@
 #include <chrono>
 #include <unistd.h>
 
+#define VERSION "2024.4.4"
+
 std::string getexepath();
 
 #ifdef LINUX
@@ -37,6 +39,7 @@ std::string getexepath()
 
 int main(int argc, char** argv)
 {
+    std::cout << "MSOL\nversion " << VERSION << "\n(year.month.day)\n" << std::endl;
     std::string executable_path = getexepath();
 
     if (argc == 2)
@@ -45,20 +48,13 @@ int main(int argc, char** argv)
 
         std::string code = load_file(argv[1]);
         std::vector<Token> stack;
-        auto start = std::chrono::high_resolution_clock::now();
-    
+
         Node* program = tokenize(executable_path, program_path, code.c_str());
         if (lex(program))
             if (parse(program))
                 interpret(executable_path, program_path, program, stack);
         
         delete_nodes(program);
-
-        auto stop = std::chrono::high_resolution_clock::now();
-
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-
-//        std::cout << "\nExecution time: " << duration.count() << " microseconds" << std::endl;
     }
     else if (argc == 1)
     {

@@ -1,7 +1,11 @@
 #include "lang.hpp"
 #include <algorithm>
 #include <any>
+
+#ifdef DEBUG
 #include <chrono>
+#endif
+
 #include <iostream>
 #include <string>
 #include <map>
@@ -131,7 +135,10 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
     Token temp;
     int pos = 0;
 
+#ifdef DEBUG
     auto start = std::chrono::high_resolution_clock::now();
+#endif
+
     while (current != nullptr)
     {
         if (current == nullptr)
@@ -1085,11 +1092,13 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
         current = !skip_end ? current->default_next : current;
     }
     
+#ifdef DEBUG
     auto stop = std::chrono::high_resolution_clock::now();
     
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
 
     std::cout << "\nExecution time: " << duration.count() << " milliseconds" << std::endl;
+#endif
 
     if (!exception_message.empty())
     {
