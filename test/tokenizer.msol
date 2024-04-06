@@ -4,14 +4,14 @@ $ _lorem_ ["Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eius
 
 #["Enter text to tokenize.\n\n> "] print
 
-#[<input>] input merge
-[<input> _lorem_]
+#[<input.global>] input merge
+[<input.global> _lorem_]
 
-#[<input> ""] == if
+#[<global.input> ""] == if
 #    ["Lorem\n"] println
 #    [_lorem_] [' '] (tokenize) println
 #    exit
 #end
 
-[<input>] get [' '] (tokenize) println
+[<input.global>] get [' '] (tokenize) println
 

@@ -3,8 +3,9 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <unistd.h>
 
-std::string load_file(const char* path)
+std::string load_file(const std::string &path)
 {
     std::string res;
     std::fstream file;
@@ -76,7 +77,7 @@ CommandEnum get_command_enum(const std::string &val)
     if (val == "defunc")
         return CommandEnum::DEFUNC;
     if (val == "$")
-        return CommandEnum::CHACHE;
+        return CommandEnum::CACHE;
     if (val == "return")
         return CommandEnum::RETURN;
     if (val == "end")
@@ -247,10 +248,51 @@ int find_tag(const std::vector<Token> &list, const Token &tag)
     return pos;
 }
 
-void error_msg(Node* node, const char* explanation)
+void error_msg(Node* node, const std::string &explanation)
 {
     std::cout << "[ERROR]" << std::endl;
     std::cout << "Line " << node->line << std::endl;
     std::cout << get_token_string(node->t) << "\n" << std::endl;
     std::cout << explanation << std::endl;
 }
+
+bool is_valid_extension(const std::string &file, const std::string &extension)
+{
+    bool result = false;
+
+    if (file.length() >= extension.length())
+        result = file.substr(file.length() - extension.length()) == extension;
+
+    return result;
+}
+
+#ifdef LINUX
+#include <linux/limits.h>
+
+std::string getexepath()
+{
+    char buffer[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) -1);
+    std::string result = std::string(buffer, len);
+    while (!result.empty() && result.back() != '/' && result.back() != '\\')
+        result.erase(result.length() - 1, 1);
+
+    return result;
+}
+#endif
+
+#ifdef WINDOWS
+#include <windows.h>
+
+std::string getexepath()
+{
+    char buffer[MAX_PATH];
+    GetModuleFileName(NULL, buffer, MAX_PATH);
+    std::string result = std::string(buffer, sizeof buffer);
+    while (!result.empty() && result.back() != '/' && result.back() != '\\')
+        result.erase(result.length() - 1, 1);
+
+    return result;
+}
+#endif
+

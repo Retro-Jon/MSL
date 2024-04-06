@@ -1,9 +1,8 @@
 #include "lang.hpp"
-#include <iostream>
 #include <vector>
 #include <algorithm>
 
-Node* tokenize(const std::string &executable_path, const std::string &program_path, const char* code)
+Node* tokenize(const std::string &executable_path, const std::string &program_path, const std::string &code)
 {
     Node* list = new Node();
     Node* pointer = list;
@@ -73,8 +72,8 @@ Node* tokenize(const std::string &executable_path, const std::string &program_pa
                 else
                     file_path = program_path + directive_arg;
                 
-                std::string file_content = load_file(file_path.c_str());
-                Node* new_nodes = tokenize(executable_path, program_path, file_content.c_str());
+                std::string file_content = load_file(file_path);
+                Node* new_nodes = tokenize(executable_path, program_path, file_content);
                 pointer->default_next = new_nodes;
 
                 while (pointer->default_next != nullptr)

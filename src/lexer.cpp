@@ -51,19 +51,19 @@ bool lex(Node* nodes)
                 pointer->t.value = val;
             } else if (val == "true" || val == "false")
                 pointer->t.type = TokenType::DATA_Bool;
-            else if (val.back() == '>' && val.length() > 1)
+            else if (val.length() > 2 && val.front() == '<' && val.back() == '>')
             {
-                if (val.find("<..") != std::string::npos)
+                if (val.find(".local>") != std::string::npos)
                     pointer->t.type = TokenType::TAG_LOCAL;
-                else if (val.find("<.") != std::string::npos)
+                else if (val.find(".member>") != std::string::npos)
                     pointer->t.type = TokenType::TAG_MEMBER;
-                else if (val.find("<!") != std::string::npos)
+                else if (val.find(".block>") != std::string::npos)
                     pointer->t.type = TokenType::TAG_BLOCK;
-                else if (val.find("<") != std::string::npos)
+                else if (val.find(".global>") != std::string::npos)
                     pointer->t.type = TokenType::TAG_GLOBAL;
                 else
                 {
-                    error_msg(pointer, "Incomplete TAG");
+                    error_msg(pointer, "Incomplete TAG: " + val);
                     return false;
                     break;
                 }
@@ -91,6 +91,7 @@ bool lex(Node* nodes)
                     {
                         if (!isdigit(c) && c != '.' && c != '-')
                         {
+                            pointer->t.type = TokenType::DATA_String;
                             error_msg(pointer, "Numeric values cannot include letters.");
                             return false;
                         }

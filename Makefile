@@ -3,15 +3,24 @@ SRC = $(wildcard src/*.cpp)
 BUILD_LINUX = build/msol
 BUILD_WIN = build/msol.exe
 
-debug-linux:
-	$(CC) -D LINUX -D DEBUG $(SRC) -o $(BUILD_LINUX) -g
-
-debug-windows:
+debug:
+ifeq ($(OS),Windows_NT)
 	$(CC) -D WINDOWS -D DEBUG $(SRC) -o $(BUILD_WIN) -g
+else
+	$(CC) -D LINUX -D DEBUG $(SRC) -o $(BUILD_LINUX) -g
+endif
 
-release-linux:
-	$(CC) -D LINUX $(SRC) -o $(BUILD_LINUX) -Ofast
+performance:
+ifeq ($(OS),Windows_NT)
+	$(CC) -D WINDOWS -D DEBUG $(SRC) -o $(BUILD_WIN) -Ofast
+else
+	$(CC) -D LINUX -D DEBUG $(SRC) -o $(BUILD_LINUX) -Ofast
+endif
 
-release-windows:
+release:
+ifeq ($(OS),Windows_NT)
 	$(CC) -D WINDOWS $(SRC) -o $(BUILD_WIN) -Ofast
+else
+	$(CC) -D LINUX $(SRC) -o $(BUILD_LINUX) -Ofast
+endif
 

@@ -2,6 +2,8 @@
 #include <any>
 #include <string>
 #include <vector>
+#define VERSION "2024.4.4"
+#define EXTENSION ".msol"
 
 enum TokenType
 {
@@ -51,7 +53,7 @@ enum CommandEnum
     WHILE,
     FOR,
     DEFUNC,
-    CHACHE,
+    CACHE,
     RETURN,
     END,
     BREAK,
@@ -110,19 +112,21 @@ struct Function
     int arg_count = 0;
 };
 
-Node* tokenize(const std::string &executable_path, const std::string &program_path, const char* code);
+Node* tokenize(const std::string &executable_path, const std::string &program_path, const std::string &code);
 bool lex(Node* Nodes);
 bool parse(Node* Nodes);
 bool interpret(const std::string &executable_path, const std::string &program_path, Node* program, std::vector<Token> &backup_stack);
 
-std::string load_file(const char* path);
+std::string load_file(const std::string &path);
 void delete_nodes(Node* pointer);
 CommandEnum get_command_enum(const std::string &val);
 std::string get_token_string(const Token &t);
 std::string trim_num_string(const std::string &num);
 
 int find_tag(const std::vector<Token> &list, const Token &tag);
-void error_msg(Node* node, const char* explanation);
+void error_msg(Node* node, const std::string &explanation);
+bool is_valid_extension(const std::string &file, const std::string &extension);
+std::string getexepath();
 
 inline bool is_tag(const Token &t)
 {
