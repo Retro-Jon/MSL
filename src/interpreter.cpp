@@ -10,16 +10,6 @@
 #include <string>
 #include <map>
 
-std::vector<Token> reverse_list(const std::vector<Token> &list)
-{
-    std::vector<Token> res;
-
-    for (int i = list.size() - 1; i >= 0; i--)
-        res.push_back(list[i]);
-
-    return res;
-}
-
 void print_list(const std::vector<Token> &list)
 {
     std::cout << "Count " << list.size() << std::endl;
@@ -47,6 +37,24 @@ void print_list(const std::vector<Token> &list)
         std::cout << "\n...\n" << std::to_string(i) << " : " << last_item;
     
     std::cout << std::endl;
+}
+
+void reverse_list(std::vector<Token> &list)
+{
+    if (list.size() < 2)
+        return;
+
+    int e = list.size() - 1;
+    int b = 0;
+
+    while (b < e && e > 0 && b < list.size())
+    {
+        Token a = list[b];
+        list[b] = list[e];
+        list[e] = a;
+        b++;
+        e--;
+    }
 }
 
 inline bool is_stack_break(const Token &tok)
@@ -124,7 +132,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
     Token temp;
 
 #ifdef DEBUG
-    auto start = std::chrono::high_resolution_clock::now();
+    const auto start = std::chrono::high_resolution_clock::now();
 #endif
 
     while (current != nullptr)
@@ -211,7 +219,8 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                     res_set = true;
                 };
 
-                std::vector<Token> values = reverse_list(pop_list(stack));
+                std::vector<Token> values = pop_list(stack);
+                reverse_list(values);
 
                 if (command == "=")
                 {
@@ -391,7 +400,8 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                     case CommandEnum::PRINTLN:
                     case CommandEnum::PRINT:
                     {
-                        std::vector<Token> list = reverse_list(pop_list(stack));
+                        std::vector<Token> list = pop_list(stack);
+                        reverse_list(list);
                         
                         for (Token t : list)
                         {
@@ -446,7 +456,8 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
                     case CommandEnum::AT:
                     {
-                        std::vector<Token> list = reverse_list(pop_list(stack));
+                        std::vector<Token> list = pop_list(stack);
+                        reverse_list(list);
                         // GLOBAL_TAG | LOCAL_TAG | MEMBER_TAG | DATA_String
                         // INT
 
@@ -569,7 +580,9 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
                     case CommandEnum::MERGE:
                     {
-				        append_list(stack, reverse_list(pop_list(stack)));
+                        std::vector<Token> list = pop_list(stack);
+                        reverse_list(list);
+				        append_list(stack, list);
                         break;
                     }
 
@@ -589,7 +602,8 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         
                         for (int i = 0; i < int(std::any_cast<float>(count.value)); i++)
                         {
-                            std::vector<Token> b = reverse_list(pop_list(stack));
+                            std::vector<Token> b = pop_list(stack);
+                            reverse_list(b);
                             append_list(b, result);
                             result = b;
                         }
@@ -608,7 +622,8 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                 values.at(i).value = float(int(std::any_cast<float>(values.at(i).value)));
                         }
     
-                        push_list(stack, reverse_list(values));
+                        reverse_list(values);
+                        push_list(stack, values);
                         break;
                     }
 
@@ -678,7 +693,9 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
                     case CommandEnum::WHILE:
                     {
-                        std::vector<Token> list = reverse_list(pop_list(stack));
+                        std::vector<Token> list = pop_list(stack);
+                        reverse_list(list);
+
                         if (check_exception(exception_message, ((list.size() != 1 && list.size() != 2) || list.back().type != TokenType::DATA_Bool), "Expected a single element list, containing a boolean value.\nA leading tag may be used as a way to access this value."))
                             break;
 
@@ -697,7 +714,8 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
                     case CommandEnum::FOR:
                     {
-                        std::vector<Token> list = reverse_list(pop_list(stack));
+                        std::vector<Token> list = pop_list(stack);
+                        reverse_list(list);
 
                         if (check_exception(exception_message, list.size() < 3 || list.size() > 4, "Expected a list of 3 numeric values.\nList may begin with a tag to access the counter."))
                             break;
@@ -809,13 +827,17 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                             std::vector<Token> ret_list;
 
                             if (command == "return")
-                                ret_list = reverse_list(pop_list(stack));
+                            {
+                                ret_list = pop_list(stack);
+                                reverse_list(ret_list);
+                            }
 
                             std::vector<Token> list;
 
                             while (!stack.empty())
                             {
-                                list = reverse_list(pop_list(stack));
+                                list = pop_list(stack);
+                                reverse_list(list);
 
                                 if (list.empty())
                                     continue;
@@ -841,17 +863,26 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                 case CommandEnum::IF:
                                 case CommandEnum::ERROR_HANDLER:
                                     while (!list.empty() && list.back().type != TokenType::CONDITION_BLOCK)
-                                        list = reverse_list(pop_list(stack));
+                                    {
+                                        list = pop_list(stack);
+                                        reverse_list(list);
+                                    }
                                     break;
                                 case CommandEnum::BEGIN:
                                     while (!list.empty() && list.back().type != TokenType::BLOCK)
-                                        list = reverse_list(pop_list(stack));
+                                    {
+                                        list = pop_list(stack);
+                                        reverse_list(list);
+                                    }
                                     break;
                                 case CommandEnum::LOOP:
                                 case CommandEnum::WHILE:
                                 case CommandEnum::FOR:
                                     while (!list.empty() && list.back().type != TokenType::LOOP_BLOCK)
-                                        list = reverse_list(pop_list(stack));
+                                    {
+                                        list = pop_list(stack);
+                                        reverse_list(list);
+                                    }
 
                                     current = current->alt_next;
                                     skip_end = true;
@@ -867,10 +898,14 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                     case CommandEnum::BREAK:
                     {
                         std::string target = std::any_cast<std::string>(current->alt_next->t.value);
-                        std::vector<Token> list = reverse_list(pop_list(stack));
+                        std::vector<Token> list = pop_list(stack);
+                        reverse_list(list);
     
                         while (!list.empty() && list.back().type != TokenType::LOOP_BLOCK)
-                            list = reverse_list(pop_list(stack));
+                        {
+                            list = pop_list(stack);
+                            reverse_list(list);
+                        }
     
                         current = current->alt_next->alt_next;
                         break;
@@ -879,10 +914,14 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                     case CommandEnum::CONTINUE:
                     {
                         std::string target = std::any_cast<std::string>(current->alt_next->t.value);
-                        std::vector<Token> list = reverse_list(pop_list(stack));
+                        std::vector<Token> list = pop_list(stack);
+                        reverse_list(list);
     
                         while (!list.empty() && list.back().type != TokenType::LOOP_BLOCK)
-                            list = reverse_list(pop_list(stack));
+                        {
+                            list = pop_list(stack);
+                            reverse_list(list);
+                        }
     
                         current = current->alt_next;
                         skip_end = true;
@@ -906,8 +945,10 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
                     case CommandEnum::SWAP_LIST:
                     {
-                        std::vector<Token> list_a = reverse_list(pop_list(stack));
-                        std::vector<Token> list_b = reverse_list(pop_list(stack));
+                        std::vector<Token> list_a = pop_list(stack);
+                        std::vector<Token> list_b = pop_list(stack);
+                        reverse_list(list_a);
+                        reverse_list(list_b);
                         push_list(stack, list_a);
                         push_list(stack, list_b);
                         break;
@@ -1047,7 +1088,9 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                 for (int i = 0; i < functions.at(command).arg_count; i++)
                 {
                     push_list(function_args, {functions.at(command).argument_tags[i]});
-                    append_list(function_args, reverse_list(pop_list(stack)));
+                    std::vector<Token> values = pop_list(stack);
+                    reverse_list(values);
+                    append_list(function_args, values);
                 }
 
                 append_list(stack, function_args);
@@ -1076,9 +1119,9 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
     }
     
 #ifdef DEBUG
-    auto stop = std::chrono::high_resolution_clock::now();
+    const auto stop = std::chrono::high_resolution_clock::now();
     
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
 
     std::cout << "\nExecution time: " << duration.count() << " milliseconds" << std::endl;
 #endif
