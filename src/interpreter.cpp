@@ -1,14 +1,13 @@
 #include "lang.hpp"
 #include <algorithm>
 #include <any>
+#include <iostream>
+#include <string>
+#include <map>
 
 #ifdef DEBUG
 #include <chrono>
 #endif
-
-#include <iostream>
-#include <string>
-#include <map>
 
 void print_list(const std::vector<Token> &list)
 {
@@ -59,7 +58,7 @@ void reverse_list(std::vector<Token> &list)
 
 inline bool is_stack_break(const Token &tok)
 {
-    return tok.type == TokenType::FUNCTION_CALL || tok.type == TokenType::CONDITION_BLOCK || tok.type == TokenType::BLOCK || tok.type == TokenType::LOOP_BLOCK;
+    return !(tok.type != TokenType::FUNCTION_CALL && tok.type != TokenType::CONDITION_BLOCK && tok.type != TokenType::BLOCK && tok.type != TokenType::LOOP_BLOCK);
 }
 
 std::vector<Token> pop_list(std::vector<Token> &stack)
@@ -85,8 +84,8 @@ std::vector<Token> pop_list(std::vector<Token> &stack)
 
 inline void append_list(std::vector<Token> &base, const std::vector<Token> &list)
 {
-    for (Token t : list)
-        base.push_back(t);
+    for (int i = 0; i < list.size(); i++)
+        base.push_back(list[i]);
 }
 
 void push_list(std::vector<Token> &stack, const std::vector<Token> &list)
@@ -99,9 +98,6 @@ void push_list(std::vector<Token> &stack, const std::vector<Token> &list)
 
 Token get_tag(const std::vector<Token> &list, const Token &tag)
 {
-    if (!is_tag(tag))
-        return tag;
-
     int pos = find_tag(list, tag);
     return (pos >= 0 && pos < list.size() - 1) ? list.at(pos + 1) : tag;
 }
@@ -137,9 +133,6 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
     while (current != nullptr)
     {
-        if (current == nullptr)
-            return false;
-
         bool skip_end = false;
         std::string command = get_token_string(current->t);
 
@@ -229,10 +222,10 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                     if (check_exception(exception_message, destination.size() != 1, "Expected a single integer value or tag as the destination."))
                         break;
 
-                    if (is_tag(destination.back()))
-                        pos = find_tag(stack, destination.back()) + 1;
-                    else if (destination.back().type == TokenType::DATA_Number)
+                    if (destination.back().type == TokenType::DATA_Number)
                         pos = int(std::any_cast<float>(destination.back().value));
+                    else
+                        pos = find_tag(stack, destination.back()) + 1;
 
                     if (check_exception(exception_message, pos < 0 || pos >= stack.size(), "Position not on stack"))
                         break;
@@ -403,9 +396,9 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         std::vector<Token> list = pop_list(stack);
                         reverse_list(list);
                         
-                        for (Token t : list)
+                        for (int t = 0; t < list.size(); t++)
                         {
-                            Token val = get_tag(stack, t);
+                            Token val = get_tag(stack, list[t]);
                             if (check_exception(exception_message, !is_value(val), get_token_string(val) + ": Tag not found."))
                                 break;
 

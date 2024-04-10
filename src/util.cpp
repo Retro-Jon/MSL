@@ -182,7 +182,7 @@ std::string trim_num_string(const std::string &num)
 
 int find_tag(const std::vector<Token> &list, const Token &tag)
 {
-    if (list.empty())
+    if (list.empty() || !is_tag(tag))
         return -1;
 
     std::string value = get_token_string(tag);
