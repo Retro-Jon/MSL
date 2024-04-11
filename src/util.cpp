@@ -266,6 +266,15 @@ bool is_valid_extension(const std::string &file, const std::string &extension)
     return result;
 }
 
+std::string get_base_path(const std::string &file)
+{
+    std::string result = file;
+    while (!result.empty() && result.back() != '/' && result.back() != '\\')
+        result.erase(result.length() - 1, 1);
+
+    return result;
+}
+
 #ifdef LINUX
 #include <linux/limits.h>
 
@@ -274,10 +283,7 @@ std::string getexepath()
     char buffer[PATH_MAX];
     ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) -1);
     std::string result = std::string(buffer, len);
-    while (!result.empty() && result.back() != '/' && result.back() != '\\')
-        result.erase(result.length() - 1, 1);
-
-    return result;
+    return get_base_path(result);
 }
 #endif
 
@@ -289,10 +295,7 @@ std::string getexepath()
     char buffer[MAX_PATH];
     GetModuleFileName(NULL, buffer, MAX_PATH);
     std::string result = std::string(buffer, sizeof buffer);
-    while (!result.empty() && result.back() != '/' && result.back() != '\\')
-        result.erase(result.length() - 1, 1);
-
-    return result;
+    return get_base_path(result);
 }
 #endif
 

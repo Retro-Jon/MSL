@@ -4,8 +4,8 @@ end
 
 (my-func)
 
-$ (add) [<..nums>] defunc
-    [<..nums>] at get-list + return
+$ (add) [<nums.local>] defunc
+    [<nums.local>] at get-list + return
 end
 
 [1 2 3] (add) println

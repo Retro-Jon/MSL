@@ -1,0 +1,22 @@
+# Global tag
+[<a> 0]
+
+$ (func) [] defunc
+    # Local tag
+    [<val.l> 0]
+
+    # Member tag
+    [<val.l>] [<x.m> 1 <y.m> 2 <z.m> 3] [<y.m>] at get swap-list drop-list = 
+    
+    [<val.l>] at get return
+end
+
+# <a> = 2
+[<a>] at (func) =
+[<a>] println
+
+begin
+    [<asdf.b> "Hello World!"]
+    [<asdf.b>] println
+end
+

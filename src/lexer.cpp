@@ -53,13 +53,13 @@ bool lex(Node* nodes)
                 pointer->t.type = TokenType::DATA_Bool;
             else if (val.length() > 2 && val.front() == '<' && val.back() == '>')
             {
-                if (val.find(".local>") != std::string::npos)
+                if (val.find(".local>") != std::string::npos || val.find(".l>") != std::string::npos)
                     pointer->t.type = TokenType::TAG_LOCAL;
-                else if (val.find(".member>") != std::string::npos)
+                else if (val.find(".member>") != std::string::npos || val.find(".m>") != std::string::npos)
                     pointer->t.type = TokenType::TAG_MEMBER;
-                else if (val.find(".block>") != std::string::npos)
+                else if (val.find(".block>") != std::string::npos || val.find(".b>") != std::string::npos)
                     pointer->t.type = TokenType::TAG_BLOCK;
-                else if (val.find(".global>") != std::string::npos)
+                else if (val.find(".global>") != std::string::npos || val.find(".g>") != std::string::npos || val.find(">") != std::string::npos)
                     pointer->t.type = TokenType::TAG_GLOBAL;
                 else
                 {

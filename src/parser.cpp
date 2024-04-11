@@ -1,10 +1,13 @@
 #include "lang.hpp"
+#include <iomanip>
+#include <iterator>
 #include <vector>
 
 bool parse(Node* nodes)
 {
     std::vector<Node*> node_stack;
     Node* current = nodes;
+    Token previous;
 
     bool in_list = false;
 
@@ -84,6 +87,17 @@ bool parse(Node* nodes)
                 }
 
                 current->t.value = s;
+            }
+            case TokenType::DATA_Bool:
+            case TokenType::DATA_Char:
+            case TokenType::DATA_Number:
+            case TokenType::CONSTANT:
+            {
+                if (!in_list && !(previous.type == TokenType::COMMAND && get_command_enum(get_token_string(previous)) == CommandEnum::CACHE))
+                {
+                    error_msg(current, "Stray value outside of list.");
+                    return false;
+                }
                 break;
             }
 
@@ -143,6 +157,7 @@ bool parse(Node* nodes)
                 break;
         }
 
+        previous = current->t;
         current = current->default_next;
     }
 

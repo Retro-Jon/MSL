@@ -127,6 +127,7 @@ int find_tag(const std::vector<Token> &list, const Token &tag);
 void error_msg(Node* node, const std::string &explanation);
 bool is_valid_extension(const std::string &file, const std::string &extension);
 std::string getexepath();
+std::string get_base_path(const std::string &file);
 
 inline bool is_tag(const Token &t)
 {

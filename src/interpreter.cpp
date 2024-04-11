@@ -1,6 +1,8 @@
 #include "lang.hpp"
 #include <algorithm>
 #include <any>
+#include <cstdio>
+#include <execution>
 #include <iostream>
 #include <string>
 #include <map>
@@ -90,10 +92,18 @@ inline void append_list(std::vector<Token> &base, const std::vector<Token> &list
 
 void push_list(std::vector<Token> &stack, const std::vector<Token> &list)
 {
-    if (!list.empty() && !is_stack_break(list.back()))
+    if (list.empty() || !is_stack_break(list.back()))
         stack.push_back({.type = TokenType::LIST_START});
 
     append_list(stack, list);
+}
+
+void push_list_empty(std::vector<Token> &stack, const std::vector<Token> &list)
+{
+    if (list.empty())
+        return;
+
+    push_list(stack, list);
 }
 
 Token get_tag(const std::vector<Token> &list, const Token &tag)
@@ -158,23 +168,16 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
             case TokenType::DATA_Number:
             case TokenType::DATA_Bool:
             {
-                append_list(stack, {current->t});
+                stack.push_back(current->t);
                 break;
             }
 
             case TokenType::CONSTANT:
             {
-                if (check_exception(exception_message, !in_list, "Stray value.\nValues must be pushed to the stack as part of a list."))
+                if (check_exception(exception_message, constants.count(get_token_string(current->t)) == 0, "Undefined constant.\nConstants must be defined before being used."))
                     break;
-
-                if (current->t.type == TokenType::CONSTANT)
-                {
-                    if (check_exception(exception_message, constants.count(get_token_string(current->t)) == 0, "Undefined constant.\nConstants must be defined before being used."))
-                        break;
                     
-                    append_list(stack, {constants.at(get_token_string(current->t))});
-                }
-
+                stack.push_back(constants.at(get_token_string(current->t)));
                 break;
             }
 
@@ -213,6 +216,9 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                 };
 
                 std::vector<Token> values = pop_list(stack);
+                if (values.empty())
+                    break;
+
                 reverse_list(values);
 
                 if (command == "=")
@@ -234,20 +240,19 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                     break;
                 } else if (command == "+" || command == "-" || command == "*" || command == "/")
                 {
-                    for (Token current_val : values)
+                    res = get_tag(stack, values[0]);
+                    if (check_exception(exception_message, (!is_value(res)), get_token_string(res) + " : Expected a string or numeric value."))
+                        break;
+
+                    for (int v = 1; v < values.size(); v++)
                     {
-                        Token val = get_tag(stack, current_val);
+                        Token val = get_tag(stack, values[v]);
 
                         if (check_exception(exception_message, (!is_value(val) && res.type == TokenType::DATA_Number), get_token_string(val) + " : Expected a numeric value."))
                             break;
 
                         if (is_value(val))
                         {
-                            if (res.type == TokenType::NULL_TOKEN)
-                            {
-                                res = val;
-                                continue;
-                            }
                             if (check_exception(exception_message, (res.type == TokenType::DATA_Number && val.type != TokenType::DATA_Number), "Value types do not agree."))
                                 break;
 
@@ -314,37 +319,30 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         }
                     };
 
-                    for (Token current_val : values)
+                    res = get_tag(stack, values[0]);
+
+                    if (check_exception(exception_message, is_tag(res), get_token_string(res) + ": Tag not found."))
+                        break;
+
+                    for (int v = 1; v < values.size(); v++)
                     {
-                        Token val = get_tag(stack, current_val);
+                        Token val = get_tag(stack, values[v]);
 
                         if (check_exception(exception_message, is_tag(val), get_token_string(val) + ": Tag not found."))
                             break;
 
-                        switch (res.type)
-                        {
-                            case TokenType::NULL_TOKEN:
-                                res = val;
-                                break;
+                        if (check_exception(exception_message, (res.type != val.type && res.type != TokenType::DATA_String), (TokenTypeString[res.type] + " " + TokenTypeString[val.type] + " : Can only compare values of matching types.")))
+                            break;
 
-                            default:
-                            {
-                                if (check_exception(exception_message, (res.type != val.type && res.type != TokenType::DATA_String), (TokenTypeString[res.type] + " " + TokenTypeString[val.type] + " : Can only compare values of matching types.")))
-                                    break;
+                        bool sr = (command == "==" && !equal(res, val));
+                        sr = (sr || (command == "!=" && equal(res, val)));
+                        sr = (sr || (command == ">" && !greater(res, val)));
+                        sr = (sr || (command == ">=" && !greater(res, val) && !equal(res, val)));
+                        sr = (sr || (command == "<" && greater(res, val)));
+                        sr = (sr || (command == "<=" && greater(res, val) && !equal(res, val)));
 
-                                bool sr = (command == "==" && !equal(res, val));
-                                sr = (sr || (command == "!=" && equal(res, val)));
-                                sr = (sr || (command == ">" && !greater(res, val)));
-                                sr = (sr || (command == ">=" && !greater(res, val) && !equal(res, val)));
-                                sr = (sr || (command == "<" && greater(res, val)));
-                                sr = (sr || (command == "<=" && greater(res, val) && !equal(res, val)));
-
-                                if (sr)
-                                    set_res(false);
-
-                                break;
-                            }
-                        }
+                        if (sr)
+                            set_res(false);
                     }
 
                     if (!exception_message.empty())
@@ -353,19 +351,15 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                     push_list(stack, {{.type = TokenType::DATA_Bool, .value = !res_set}});
                 } else if (command == "and" || command == "or")
                 {
-                    res.type = TokenType::DATA_Bool;
-
-                    for (Token current_val : values)
-                    {
-                        Token val = get_tag(stack, current_val);
-                        if (check_exception(exception_message, is_tag(val), get_token_string(val) + ": Tag not found.") || check_exception(exception_message, val.type != TokenType::DATA_Bool, "Can only compare booleans."))
+                    res = get_tag(stack, values[0]);
+                    if (check_exception(exception_message, is_tag(res), get_token_string(res) + ": Tag not found.") || check_exception(exception_message, res.type != TokenType::DATA_Bool, "Can only compare booleans."))
                             break;
 
-                        if (res.type == TokenType::NULL_TOKEN)
-                        {
-                            res = val;
-                            continue;
-                        }
+                    for (int v = 1; v < values.size(); v++)
+                    {
+                        Token val = get_tag(stack, values[v]);
+                        if (check_exception(exception_message, is_tag(val), get_token_string(val) + ": Tag not found.") || check_exception(exception_message, val.type != TokenType::DATA_Bool, "Can only compare booleans."))
+                            break;
 
                         if ((command == "and" && !equal(res, val)) || (command == "or" && (std::any_cast<bool>(res.value) == false && std::any_cast<bool>(val.value) == false)))
                             set_res(false);
@@ -394,9 +388,8 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                     case CommandEnum::PRINT:
                     {
                         std::vector<Token> list = pop_list(stack);
-                        reverse_list(list);
                         
-                        for (int t = 0; t < list.size(); t++)
+                        for (int t = list.size() - 1; t >= 0; t--)
                         {
                             Token val = get_tag(stack, list[t]);
                             if (check_exception(exception_message, !is_value(val), get_token_string(val) + ": Tag not found."))
@@ -472,9 +465,9 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                 if (check_exception(exception_message, (o_pos < 0), "Offset tag not found."))
                                     break;
                                 
-                                if (list.back().type == TokenType::TAG_MEMBER)
-                                    offset = o_pos;
-                                else if (is_tag(list.back()))
+                                offset = (list.back().type == TokenType::TAG_MEMBER) ? o_pos : -1;
+                                
+                                if (is_tag(list.back()))
                                 {
                                     if (check_exception(exception_message, (stack.at(o_pos + 1).type != TokenType::DATA_Number), "Offset tag does not mark a Number."))
                                         break;
@@ -700,7 +693,6 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         }
 
                         push_list(stack, list);
-    
                         push_list(stack, {{.type = TokenType::LOOP_BLOCK, .value = TokenTypeString[TokenType::LOOP_BLOCK]}});
                         break;
                     }                   
@@ -760,45 +752,36 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
     
                         current_val.value = current_f + step_f;
 
-                        Token tag;
-    
                         if (!list.empty())
                         {
-                            tag = list.back();
+                            Token tag = list.back();
                             list.pop_back();
+                            push_list(stack, (tag.type != TokenType::NULL_TOKEN) ? std::vector<Token>{tag} : std::vector<Token>{});
                         }
 
-                        push_list(stack, (tag.type != TokenType::NULL_TOKEN) ? std::vector<Token>{tag} : std::vector<Token>{});
                         append_list(stack, {current_val, end_val, step});
-
                         push_list(stack, {{.type = TokenType::LOOP_BLOCK, .value = TokenTypeString[TokenType::LOOP_BLOCK]}});
                         break;
                     }
 
                     case CommandEnum::DEFUNC:
                     {
-                        if (temp.type == TokenType::USER_FUNCTION)
-                        {
-                            if (check_exception(exception_message, functions.count(std::any_cast<std::string>(temp.value)) != 0, "Duplicate definition: " + std::any_cast<std::string>(temp.value)))
-                                break;
+                        if (check_exception(exception_message, temp.type != TokenType::USER_FUNCTION, "User function identifier not provided") || check_exception(exception_message, functions.count(std::any_cast<std::string>(temp.value)) != 0, "Duplicate definition: " + std::any_cast<std::string>(temp.value)))
+                            break;
 
-                            std::vector<Token> function_args = pop_list(stack);
-                            Function new_func;
-                            new_func.location = current;
-                            new_func.argument_tags = new Token[function_args.size()];
-                            new_func.arg_count = function_args.size();
+                        std::vector<Token> function_args = pop_list(stack);
+                        Function new_func;
+                        new_func.location = current;
+                        new_func.argument_tags = new Token[function_args.size()];
+                        new_func.arg_count = function_args.size();
     
-                            for (int i = 0; i < new_func.arg_count; i++)
-                                new_func.argument_tags[i] = function_args[i];
-    
-                            functions.insert({std::any_cast<std::string>(temp.value), new_func});
-                            temp.type = TokenType::NULL_TOKEN;
-                            current = current->alt_next;
-                            break;
-                        } else {
-                            exception_message = "User function identifier not provided";
-                            break;
-                        }
+                        for (int i = 0; i < new_func.arg_count; i++)
+                            new_func.argument_tags[i] = function_args[i];
+
+                        functions.insert({std::any_cast<std::string>(temp.value), new_func});
+                        temp.type = TokenType::NULL_TOKEN;
+                        current = current->alt_next;
+                        break;
                     }
 
                     case CommandEnum::CACHE:
@@ -820,31 +803,23 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                             std::vector<Token> ret_list;
 
                             if (command == "return")
-                            {
                                 ret_list = pop_list(stack);
-                                reverse_list(ret_list);
-                            }
 
                             std::vector<Token> list;
 
                             while (!stack.empty())
                             {
                                 list = pop_list(stack);
-                                reverse_list(list);
 
-                                if (list.empty())
-                                    continue;
-
-                                if (list.back().type == TokenType::FUNCTION_CALL)
+                                if (!list.empty() && list.front().type == TokenType::FUNCTION_CALL)
                                     break;
                             }
 
                             current = std::any_cast<Node*>(list.back().value);
                             skip_end = true;
                     
-                            if (!ret_list.empty())
-                                push_list(stack, ret_list);
-
+                            reverse_list(ret_list);
+                            push_list_empty(stack, ret_list);
                             break;
                         } else if (command == "end")
                         {
@@ -952,7 +927,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         if (check_exception(exception_message, stack.empty(), "Empty stack."))
                             break;
 
-                        append_list(stack, {stack.back()});
+                        stack.push_back(stack.back());
                         break;
                     }
 
@@ -965,17 +940,14 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                             break;
 
                         for (int i = 0; i < int(std::any_cast<float>(count.value)); i++)
-                            append_list(stack, {stack.back()});
+                            stack.push_back(stack.back());
                         break;
                     }
 
                     case CommandEnum::DEFINE:
                     {
 
-                        if (check_exception(exception_message, temp.type != TokenType::CONSTANT, "Constant identifier not provided"))
-                            break;
-
-                        if (check_exception(exception_message, constants.count(get_token_string(temp)) != 0, "Constant already exists."))
+                        if (check_exception(exception_message, temp.type != TokenType::CONSTANT, "Constant identifier not provided") || check_exception(exception_message, constants.count(get_token_string(temp)) != 0, "Constant already exists."))
                             break;
 
                         constants.insert({std::any_cast<std::string>(temp.value), pop_list(stack).back()});
@@ -993,12 +965,10 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         std::string new_code = "";
     
                         // Load files
-                        for (Token f : file_list)
+                        for (int i = 0; i < file_list.size(); i++)
                         {
-                            if (check_exception(exception_message, f.type != TokenType::DATA_String, "Expected a string."))
-                                break;
-
-                            if (check_exception(exception_message, is_valid_extension(get_token_string(f), EXTENSION), "Invalid file extension: " + get_token_string(f) + "\nExpected " + EXTENSION + " extension."))
+                            Token f = file_list[i];
+                            if (check_exception(exception_message, f.type != TokenType::DATA_String, "Expected a string.") || check_exception(exception_message, !is_valid_extension(get_token_string(f), EXTENSION), "Invalid file extension: " + get_token_string(f) + "\nExpected " + EXTENSION + " extension."))
                                 break;
     
                             std::string file_name = get_token_string(f);
@@ -1008,12 +978,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
     
                             includes.push_back(file_name);
     
-                            std::string file_path;
-                            
-                            if (file_name.substr(0, 3) == "std")
-                                file_path = stdlibpath + file_name;
-                            else
-                                file_path = program_path + file_name;
+                            std::string file_path = (file_name.substr(0, 3) == "std" ? stdlibpath : program_path) + file_name;
                         
                             std::string file_content = load_file(file_path);
                             
@@ -1029,28 +994,18 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
     
                         Node* new_nodes = tokenize(executable_path, program_path, new_code);
 
-                        if (lex(new_nodes))
-                        {
-                            if (parse(new_nodes))
-                            {
-                                Node* next_half = current->default_next;
-                                current->default_next = new_nodes;
-    
-                                Node* last_node = current;
-    
-                                while (last_node->default_next != nullptr)
-                                    last_node = last_node->default_next;
-    
-                                last_node->default_next = next_half;
-                            } else {
-                                exception_message = "Parsing failed.";
-                                break;
-                            }
-                        } else {
-                            exception_message = "Lexical analysis failed.";
+                        if (check_exception(exception_message, !lex(new_nodes), "Lexical analysis failed.") || check_exception(exception_message, !parse(new_nodes), "Parsing failed."))
                             break;
-                        }
 
+                        Node* next_half = current->default_next;
+                        current->default_next = new_nodes;
+    
+                        Node* last_node = current;
+    
+                        while (last_node->default_next != nullptr)
+                            last_node = last_node->default_next;
+    
+                        last_node->default_next = next_half;
                         break;
                     }
 
@@ -1097,13 +1052,10 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
         if (!exception_message.empty())
         {
-            if (current->default_next != nullptr && current->default_next->t.type == TokenType::COMMAND)
+            if (current->default_next != nullptr && current->default_next->t.type == TokenType::COMMAND && std::any_cast<std::string>(current->default_next->t.value) == "?")
             {
-                if (std::any_cast<std::string>(current->default_next->t.value) == "?")
-                {
-                    current = current->default_next;
-                    continue;
-                }
+                current = current->default_next;
+                continue;
             }
             break;
         }

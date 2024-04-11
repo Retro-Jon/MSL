@@ -1,9 +1,0 @@
-$ (vector) [] defunc
-    [<.x> 0 <.y> 0 <.z> 0] return
-end
-
-[<a>] (vector) merge [<.x>] [12] =
-[<b>] (vector) merge [<.y>] [5] =
-
-[<b>] at get-list println
-

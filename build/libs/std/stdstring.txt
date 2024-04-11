@@ -1,60 +1,60 @@
-$ (get-length) [<text.local>] defunc
-    [<length.local> 0]
+$ (get-length) [<text.l>] defunc
+    [<length.l> 0]
 
     [true] while
-        [<text.local>] get {<length.local>} at ?
+        [<text.l>] get {<length.l>} at ?
             break
         end
 
-        [<length.local>] [<length.local> 1] + =
+        [<length.l>] [<length.l> 1] + =
     end
 
-    [<length.local>] get return
+    [<length.l>] get return
 end
 
-$ (get-next-token) [<text.local> <start.local> <delim.local>] defunc
-    [<result.local> ""]
-    [<index.local>] [<start.local>] get merge
+$ (get-next-token) [<text.l> <start.l> <delim.l>] defunc
+    [<result.l> ""]
+    [<index.l>] [<start.l>] get merge
 
-    # start at <start.local> - 1, go till <text.local> length, and step by one.
-    [<i.local>] [<start.local>] get {1} - [<text.local>] get (get-length) [3] merge-x {1} for
-        [<text.local>] get {<i.local>} at ?
-            [<index.local>] [<i.local>] get =
+    # start at <start.l> - 1, go till <text.l> length, and step by one.
+    [<i.l>] [<start.l>] get {1} - [<text.l>] get (get-length) [3] merge-x {1} for
+        [<text.l>] get {<i.l>} at ?
+            [<index.l>] [<i.l>] get =
             break
         end
 
-        {<c.block>} swap
+        {<c.b>} swap
 
-        [<c.block> <delim.local>] == if
-            [<index.local>] [<i.local>] get =
+        [<c.b> <delim.l>] == if
+            [<index.l>] [<i.l>] get =
             break
         end
 
-        [<result.local>] [<result.local> <c.block>] + =
+        [<result.l>] [<result.l> <c.b>] + =
     end
 
-    [<text.member>] [<result.local>] get {<index.member>} [<index.local>] get [3] merge-x return
+    [<text.m>] [<result.l>] get {<index.m>} [<index.l>] get [3] merge-x return
 end
 
-$ (tokenize) [<input.local> <delim.local>] defunc
-    [<length.local>] [<input.local>] get (get-length) merge
-    [<count.local> 0]
+$ (tokenize) [<input.l> <delim.l>] defunc
+    [<length.l>] [<input.l>] get (get-length) merge
+    [<count.l> 0]
 
-    [<current.local> ""] [<length.local>] get dup-x
+    [<current.l> ""] [<length.l>] get dup-x
 
-    [<i.local> -1] [<length.local>] get merge {1} for
-        [<input.local>] get [<i.local>] get [<delim.local>] get (get-next-token)
-            [<text.member>] get [<current.local> <count.local>] at swap-list =
-            [<index.member>] get [<i.local>] swap-list =
+    [<i.l> -1] [<length.l>] get merge {1} for
+        [<input.l>] get [<i.l>] get [<delim.l>] get (get-next-token)
+            [<text.m>] get [<current.l> <count.l>] at swap-list =
+            [<index.m>] get [<i.l>] swap-list =
 
-        [<count.local>] [<count.local> 1] + =
+        [<count.l>] [<count.l> 1] + =
     end
 
-    [<output.local> ""]
-    [""] [<count.local>] get dup-x drop
+    [<output.l> ""]
+    [""] [<count.l>] get dup-x drop
 
-    [<i.local> -1] [<count.local>] get {1} - merge {1} for
-        [<output.local>] at {2 <i.local>} + [<current.local> <i.local>] at get =
+    [<i.l> -1] [<count.l>] get {1} - merge {1} for
+        [<output.l>] at {2 <i.l>} + [<current.l> <i.l>] at get =
     end
 
     return

@@ -1,0 +1,9 @@
+$ (vector) [] defunc
+    [<x.m> 0 <y.m> 0 <z.m> 0] return
+end
+
+[<a>] (vector) merge [<x.m>] [12] =
+[<b>] (vector) merge [<y.m>] [5] =
+
+[<b>] at get-list println
+

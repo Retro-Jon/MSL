@@ -1,16 +1,16 @@
-[<player_input> ""]
+[<player_input.global> ""]
 
 # Loop
-[<run> true] while
+[<run.global> true] while
     ["ENTER INPUT\n> "] print
-    [<player_input>] input =
-    ["You " <player_input> "\n"] print
+    [<player_input.local>] input =
+    ["You " <player_input.local> "\n"] print
 
-    [<player_input> "exit"] == if
+    [<player_input.local> "exit"] == if
         ["Are you sure?\n[y/n] "] print
-        [<player_input>] input =
+        [<player_input.local>] input =
 
-        [<player_input> "y"] == [<player_input> "Y"] == merge or if
+        [<player_input.local> "y"] == [<player_input.local> "Y"] == merge or if
             ["Exiting..."] println
             exit
         end

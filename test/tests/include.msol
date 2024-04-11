@@ -1,4 +1,4 @@
-["functions.txt"] include
+["functions.msol"] include
 
 ["Includes end."] println
 
