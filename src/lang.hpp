@@ -120,11 +120,11 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 std::string load_file(const std::string &path);
 void delete_nodes(Node* pointer);
 CommandEnum get_command_enum(const std::string &val);
-std::string get_token_string(const Token &t);
+std::string get_token_string(const Token &t = {.type = TokenType::NULL_TOKEN});
 std::string trim_num_string(const std::string &num);
 
 int find_tag(const std::vector<Token> &list, const Token &tag);
-void error_msg(Node* node, const std::string &explanation);
+void error_msg(const int &line, const std::string &token_string, const std::string &explanation);
 bool is_valid_extension(const std::string &file, const std::string &extension);
 std::string getexepath();
 std::string get_base_path(const std::string &file);

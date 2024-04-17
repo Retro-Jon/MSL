@@ -248,11 +248,11 @@ int find_tag(const std::vector<Token> &list, const Token &tag)
     return pos;
 }
 
-void error_msg(Node* node, const std::string &explanation)
+void error_msg(const int &line, const std::string &token_string, const std::string &explanation)
 {
     std::cout << "[ERROR]" << std::endl;
-    std::cout << "Line " << node->line << std::endl;
-    std::cout << get_token_string(node->t) << "\n" << std::endl;
+    std::cout << "Line " << line << std::endl;
+    std::cout << token_string << "\n" << std::endl;
     std::cout << explanation << std::endl;
 }
 

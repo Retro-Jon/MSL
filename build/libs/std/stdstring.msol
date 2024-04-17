@@ -18,12 +18,12 @@ $ (get-next-token) [<text.l> <start.l> <delim.l>] defunc
 
     # start at <start.l> - 1, go till <text.l> length, and step by one.
     [<i.l>] [<start.l>] get {1} - [<text.l>] get (get-length) [3] merge-x {1} for
+        [<c.b>]
         [<text.l>] get {<i.l>} at ?
             [<index.l>] [<i.l>] get =
             break
         end
-
-        {<c.b>} swap
+        merge
 
         [<c.b> <delim.l>] == if
             [<index.l>] [<i.l>] get =
@@ -56,6 +56,7 @@ $ (tokenize) [<input.l> <delim.l>] defunc
     [<i.l> -1] [<count.l>] get {1} - merge {1} for
         [<output.l>] at {2 <i.l>} + [<current.l> <i.l>] at get =
     end
+    [<output.l>] println
 
     return
 end
