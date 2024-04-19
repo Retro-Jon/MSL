@@ -14,9 +14,6 @@ void print_list(const std::vector<Token> &list)
 {
     std::cout << "Count " << list.size() << std::endl;
 
-    if (list.empty())
-        return;
-
     std::string last_item = "";
     bool match = false;
     std::string item;
@@ -33,17 +30,11 @@ void print_list(const std::vector<Token> &list)
         last_item = item;
     }
 
-    if (match)
-        std::cout << "\n...\n" << std::to_string(i) << " : " << last_item;
-    
-    std::cout << std::endl;
+    std::cout << (match ? ("\n...\n" + std::to_string(i) + " : " + last_item) : "") << std::endl;
 }
 
 void reverse_list(std::vector<Token> &list)
 {
-    if (list.size() < 2)
-        return;
-
     int e = list.size() - 1;
     int b = 0;
 
@@ -59,50 +50,90 @@ void reverse_list(std::vector<Token> &list)
 
 inline bool is_stack_break(const Token &tok)
 {
-    return !(tok.type != TokenType::FUNCTION_CALL && tok.type != TokenType::CONDITION_BLOCK && tok.type != TokenType::BLOCK && tok.type != TokenType::LOOP_BLOCK);
+    return tok.type >= TokenType::FUNCTION_CALL;
 }
 
-std::vector<Token> pop_list(std::vector<Token> &stack)
+std::vector<Token> pop_list(std::vector<Token> &stack, const bool &can_pop)
 {
     std::vector<Token> list;
 
-    while (!stack.empty() && stack.back().type != TokenType::LIST_START && !is_stack_break(stack.back()))
+    if (can_pop)
     {
-        list.push_back(stack.back());
-        stack.pop_back();
-    }
-
-    if (!stack.empty())
-    {
-        if (is_stack_break(stack.back()))
+        while (!stack.empty() && stack.back().type != TokenType::LIST_START && !is_stack_break(stack.back()))
+        {
             list.push_back(stack.back());
+            stack.pop_back();
+        }
 
-        stack.pop_back();
+        if (!stack.empty())
+        {
+            if (is_stack_break(stack.back()))
+                list.push_back(stack.back());
+
+            stack.pop_back();
+        }
+    } else {
+        int i = 0;
+
+        for (i = stack.size() - 1; i >= 0; i--)
+        {
+            if (stack.at(i).type == TokenType::LIST_START || is_stack_break(stack.at(i)))
+                break;
+
+            list.push_back(stack.at(i));
+        }
+
+        if (i >= 0 && is_stack_break(stack.at(i)))
+            list.push_back(stack.at(i));
     }
 
     return list;
 }
 
-inline void append_list(std::vector<Token> &base, const std::vector<Token> &list)
+std::vector<Token> top_list(const std::vector<Token> &stack)
 {
+    std::vector<Token> list;
+    int i = stack.size() - 1;
+
+    for (; i >= 0; i--)
+    {
+        if (stack.at(i).type == TokenType::LIST_START)
+            break;
+        else if (is_stack_break(stack.at(i)))
+        {
+            list.push_back(stack.at(i));
+            break;
+        }
+
+        list.push_back(stack.at(i));
+    }
+
+    return list;
+}
+
+void append_list(std::vector<Token> &base, const std::vector<Token> &list, const bool &can_push)
+{
+    if (!can_push)
+        return;
+
     for (int i = 0; i < list.size(); i++)
         base.push_back(list[i]);
 }
 
-void push_list(std::vector<Token> &stack, const std::vector<Token> &list)
+void push_list(std::vector<Token> &stack, const std::vector<Token> &list, const bool &can_push)
 {
-    if (list.empty() || !is_stack_break(list.back()))
-        stack.push_back({.type = TokenType::LIST_START});
+    if (can_push)
+    {
+        if (list.empty() || !is_stack_break(list.back()))
+            stack.push_back({.type = TokenType::LIST_START});
 
-    append_list(stack, list);
+        append_list(stack, list, can_push);
+    }
 }
 
-void push_list_empty(std::vector<Token> &stack, const std::vector<Token> &list)
+void push_list_empty(std::vector<Token> &stack, const std::vector<Token> &list, const bool &can_push)
 {
-    if (list.empty())
-        return;
-
-    push_list(stack, list);
+    list.empty() || !can_push ? void() : push_list(stack, list, can_push);
 }
 
 Token get_tag(const std::vector<Token> &list, const Token &tag)
@@ -117,7 +148,7 @@ class InterpreterException : public std::exception
         const std::string message;
 
     public:
-        InterpreterException(const std::string msg) : message(msg) {}
+        InterpreterException(const std::string &msg) : message(msg) {}
 
         const char* what()
         {
@@ -127,10 +158,7 @@ class InterpreterException : public std::exception
 
 inline void check_exception(const bool &condition, const std::string &message)
 {
-    if (!condition)
-        return;
-
-    throw InterpreterException(message);
+    condition ? throw InterpreterException(message) : void();
 }
 
 bool interpret(const std::string &executable_path, const std::string &program_path, Node* program, std::vector<Token> &backup_stack)
@@ -147,10 +175,13 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
     const std::string stdlibpath = executable_path + "libs/std/";
 
-    append_list(stack, backup_stack);
+    append_list(stack, backup_stack, true);
 
     bool in_list = false;
     Token temp;
+
+    bool can_pop = true;
+    bool can_push = true;
 
 #ifdef DEBUG
     const auto start = std::chrono::high_resolution_clock::now();
@@ -165,7 +196,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
             switch (current->t.type)
             {
                 case TokenType::LIST_START:
-                    append_list(stack, {current->t});
+                    append_list(stack, {current->t}, can_push);
                 case TokenType::SUB_LIST_START:
                     check_exception(stack.empty(), "No lists are present on the stack.");
                     in_list = true;
@@ -185,7 +216,9 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                 case TokenType::DATA_Number:
                 case TokenType::DATA_Bool:
                 {
-                    stack.push_back(current->t);
+                    if (can_push)
+                        stack.push_back(current->t);
+
                     break;
                 }
 
@@ -193,7 +226,9 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                 {
                     check_exception(constants.count(get_token_string(current->t)) == 0, "Undefined constant.\nConstants must be defined before being used.");
                     
-                    stack.push_back(constants.at(get_token_string(current->t)));
+                    if (can_push)
+                        stack.push_back(constants.at(get_token_string(current->t)));
+
                     break;
                 }
 
@@ -230,7 +265,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         res_set = true;
                     };
 
-                    std::vector<Token> values = pop_list(stack);
+                    std::vector<Token> values = pop_list(stack, can_pop);
                     if (values.empty())
                         break;
 
@@ -238,14 +273,10 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
                     if (command == "=")
                     {
-                        std::vector<Token> destination = pop_list(stack);
+                        std::vector<Token> destination = pop_list(stack, can_pop);
 
                         check_exception(destination.size() != 1, "Expected a single integer value or tag as the destination.");
-
-                        if (destination.back().type == TokenType::DATA_Number)
-                            pos = int(std::any_cast<float>(destination.back().value));
-                        else
-                            pos = find_tag(stack, destination.back()) + 1;
+                        pos = (destination.back().type == TokenType::DATA_Number) ? int(std::any_cast<float>(destination.back().value)) : find_tag(stack, destination.back()) + 1;
 
                         check_exception(pos < 0 || pos >= stack.size(), "Position not on stack");
                     
@@ -292,10 +323,10 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                             }
                         }
                     
-                        push_list(stack, {res});
+                        push_list(stack, {res}, can_push);
                     } else if (command == "==" || command == "!=" || command == ">" || command == ">=" || command == "<" || command == "<=")
                     {
-                        auto greater = [&exception_message](const Token &a, const Token &b)
+                        auto greater = [](const Token &a, const Token &b)
                         {
                             check_exception(a.type != b.type, "Mismatched Types");
 
@@ -336,7 +367,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                 set_res(false);
                         }
 
-                        push_list(stack, {{.type = TokenType::DATA_Bool, .value = !res_set}});
+                        push_list(stack, {{.type = TokenType::DATA_Bool, .value = !res_set}}, can_push);
                     } else if (command == "and" || command == "or")
                     {
                         res = get_tag(stack, values[0]);
@@ -358,7 +389,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
                         res.value = !res_set;
 
-                        push_list(stack, {res});
+                        push_list(stack, {res}, can_push);
                     }
                     break;
                 }
@@ -372,7 +403,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         case CommandEnum::PRINTLN:
                         case CommandEnum::PRINT:
                         {
-                            std::vector<Token> list = pop_list(stack);
+                            std::vector<Token> list = pop_list(stack, can_pop);
                         
                             for (int t = list.size() - 1; t >= 0; t--)
                             {
@@ -402,7 +433,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                 t.value = t.type == TokenType::DATA_Bool ? (val == "true") : t.value;
                             }
 
-                            push_list(stack, {t});
+                            push_list(stack, {t}, can_push);
                             break;
                         }
 
@@ -420,13 +451,13 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
                         case CommandEnum::DROP_LIST:
                         {
-                            pop_list(stack);
+                            pop_list(stack, can_pop);
                             break;
                         }
 
                         case CommandEnum::AT:
                         {
-                            std::vector<Token> list = pop_list(stack);
+                            std::vector<Token> list = pop_list(stack, can_pop);
                             reverse_list(list);
                             // GLOBAL_TAG | LOCAL_TAG | MEMBER_TAG | DATA_String
                             // INT
@@ -477,13 +508,13 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                 res = {.type = TokenType::DATA_Char, .value = std::any_cast<std::string>(list.front().value).at(offset)};
                             }
 
-                            push_list(stack, {res});
+                            push_list(stack, {res}, can_push);
                             break;
                         }
 
                         case CommandEnum::GET:
                         {
-                            std::vector<Token> list = pop_list(stack);
+                            std::vector<Token> list = pop_list(stack, can_pop);
 
                             check_exception(list.size() != 1, "Expected a tag or a single integer value.");
 
@@ -494,16 +525,16 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                 Token val = get_tag(stack, tok);
                                 check_exception(!is_value(val), "Provided index does not exist on the stack.");
                                 
-                                push_list(stack, {val});
+                                push_list(stack, {val}, can_push);
                             } else if (tok.type == TokenType::DATA_Number)
                             {
                                 int pos = int(std::any_cast<float>(tok.value));
                                 check_exception(pos < 0 || pos >= stack.size(), "Provided index does not exist on the stack.");
 
                                 if (is_value(stack.at(pos)))
-                                    push_list(stack, {stack.at(pos)});
+                                    push_list(stack, {stack.at(pos)}, can_push);
                                 else
-                                    push_list(stack, {{.type = TokenType::DATA_String, .value = TokenTypeString[stack.at(pos).type]}});
+                                    push_list(stack, {{.type = TokenType::DATA_String, .value = TokenTypeString[stack.at(pos).type]}}, can_push);
                             }
                             break;
                         }
@@ -511,7 +542,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         case CommandEnum::GET_LIST:
                         case CommandEnum::GET_LIST_VALUES:
 	    			    {
-                            std::vector<Token> tag = pop_list(stack);
+                            std::vector<Token> tag = pop_list(stack, can_pop);
                             check_exception((tag.size() != 1 || tag.back().type != TokenType::DATA_Number), "Expected a single integer value.");
     
                             std::vector<Token> list;
@@ -529,22 +560,22 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                 }
                             }
 
-                            push_list(stack, list);
+                            push_list(stack, list, can_push);
 
                             break;
     				    }
 
                         case CommandEnum::MERGE:
                         {
-                            std::vector<Token> list = pop_list(stack);
+                            std::vector<Token> list = pop_list(stack, can_pop);
                             reverse_list(list);
-				            append_list(stack, list);
+				            append_list(stack, list, can_push);
                             break;
                         }
 
                         case CommandEnum::MERGE_X:
                         {
-                            std::vector<Token> args = pop_list(stack);
+                            std::vector<Token> args = pop_list(stack, can_pop);
 
                             check_exception(args.size() != 1, "Expected a single element list, containing a numeric value.");
 
@@ -556,19 +587,19 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         
                             for (int i = 0; i < int(std::any_cast<float>(count.value)); i++)
                             {
-                                std::vector<Token> b = pop_list(stack);
+                                std::vector<Token> b = pop_list(stack, can_pop);
                                 reverse_list(b);
-                                append_list(b, result);
+                                append_list(b, result, can_push);
                                 result = b;
                             }
     
-                            push_list(stack, result);
+                            push_list(stack, result, can_push);
                             break;
                         }
 
                         case CommandEnum::INT:
                         {
-                            std::vector<Token> values = pop_list(stack);
+                            std::vector<Token> values = pop_list(stack, can_pop);
     
                             for (int i = 0; i < values.size() - 1; i++)
                             {
@@ -577,13 +608,13 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                             }
     
                             reverse_list(values);
-                            push_list(stack, values);
+                            push_list(stack, values, can_push);
                             break;
                         }
 
                         case CommandEnum::IF:
                         {
-                            std::vector<Token> condition = pop_list(stack);
+                            std::vector<Token> condition = pop_list(stack, can_pop);
 
                             check_exception(condition.size() != 1 || condition.front().type != TokenType::DATA_Bool, "Expected a single Boolean value.");
 
@@ -593,17 +624,17 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                 skip_end = true;
                             }
                             
-                            push_list(stack, {{.type = TokenType::CONDITION_BLOCK}});
+                            push_list(stack, {{.type = TokenType::CONDITION_BLOCK}}, can_push);
                             break;
                         }
 
                         case CommandEnum::ERROR_HANDLER:
                         {
-                            push_list(stack, {{.type = TokenType::CONDITION_BLOCK}});
+                            push_list(stack, {{.type = TokenType::CONDITION_BLOCK}}, can_push);
                             
                             if (!exception_message.empty())
                             {
-                                push_list(stack, {{.type = TokenType::DATA_String, .value = exception_message}});
+                                push_list(stack, {{.type = TokenType::DATA_String, .value = exception_message}}, can_push);
                                 exception_message = "";
                             } else {
                                 current = current->alt_next;
@@ -615,13 +646,13 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
                         case CommandEnum::BEGIN:
                         {
-                            push_list(stack, {{.type = TokenType::BLOCK}});
+                            push_list(stack, {{.type = TokenType::BLOCK}}, can_push);
                             break;
                         }
 
                         case CommandEnum::LOOP:
                         {
-                            std::vector<Token> list = pop_list(stack);
+                            std::vector<Token> list = pop_list(stack, can_pop);
 
                             check_exception(list.empty(), "Expected a single element list, containing an integer value.");
 
@@ -639,13 +670,13 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                             Token count = list.front();
                             count.value = std::any_cast<float>(count.value) - 1;
     
-                            push_list(stack, {count, {.type = TokenType::LOOP_BLOCK, .value = TokenTypeString[TokenType::LOOP_BLOCK]}});
+                            push_list(stack, {count, {.type = TokenType::LOOP_BLOCK, .value = TokenTypeString[TokenType::LOOP_BLOCK]}}, can_push);
                             break;
                         }
 
                         case CommandEnum::WHILE:
                         {
-                            std::vector<Token> list = pop_list(stack);
+                            std::vector<Token> list = pop_list(stack, can_pop);
                             reverse_list(list);
 
                             check_exception(((list.size() != 1 && list.size() != 2) || list.back().type != TokenType::DATA_Bool), "Expected a single element list, containing a boolean value.\nA leading tag may be used as a way to access this value.");
@@ -657,14 +688,14 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                 break;
                             }
 
-                            push_list(stack, list);
-                            push_list(stack, {{.type = TokenType::LOOP_BLOCK, .value = TokenTypeString[TokenType::LOOP_BLOCK]}});
+                            push_list(stack, list, can_push);
+                            push_list(stack, {{.type = TokenType::LOOP_BLOCK, .value = TokenTypeString[TokenType::LOOP_BLOCK]}}, can_push);
                             break;
                         }                   
 
                         case CommandEnum::FOR:
                         {
-                            std::vector<Token> list = pop_list(stack);
+                            std::vector<Token> list = pop_list(stack, can_pop);
                             reverse_list(list);
 
                             check_exception(list.size() < 3 || list.size() > 4, "Expected a list of 3 numeric values.\nList may begin with a tag to access the counter.");
@@ -717,11 +748,11 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                             {
                                 Token tag = list.back();
                                 list.pop_back();
-                                push_list(stack, (tag.type != TokenType::NULL_TOKEN) ? std::vector<Token>{tag} : std::vector<Token>{});
+                                push_list(stack, (tag.type != TokenType::NULL_TOKEN) ? std::vector<Token>{tag} : std::vector<Token>{}, can_push);
                             }
 
-                            append_list(stack, {current_val, end_val, step});
-                            push_list(stack, {{.type = TokenType::LOOP_BLOCK, .value = TokenTypeString[TokenType::LOOP_BLOCK]}});
+                            append_list(stack, {current_val, end_val, step}, can_push);
+                            push_list(stack, {{.type = TokenType::LOOP_BLOCK, .value = TokenTypeString[TokenType::LOOP_BLOCK]}}, can_push);
                             break;
                         }
 
@@ -730,7 +761,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                             check_exception(temp.type != TokenType::USER_FUNCTION, "User function identifier not provided");
                             check_exception(functions.count(std::any_cast<std::string>(temp.value)) != 0, "Duplicate definition: " + std::any_cast<std::string>(temp.value));
 
-                            std::vector<Token> function_args = pop_list(stack);
+                            std::vector<Token> function_args = pop_list(stack, can_pop);
                             Function new_func = {.location = current};
                             new_func.argument_tags = new Token[function_args.size()];
                             new_func.arg_count = function_args.size();
@@ -762,13 +793,13 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                 std::vector<Token> ret_list;
 
                                 if (command == "return")
-                                    ret_list = pop_list(stack);
+                                    ret_list = pop_list(stack, can_pop);
 
                                 std::vector<Token> list;
 
                                 while (!stack.empty())
                                 {
-                                    list = pop_list(stack);
+                                    list = pop_list(stack, can_pop);
 
                                     if (!list.empty() && list.front().type == TokenType::FUNCTION_CALL)
                                         break;
@@ -778,13 +809,13 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                 skip_end = true;
                     
                                 reverse_list(ret_list);
-                                push_list_empty(stack, ret_list);
+                                push_list_empty(stack, ret_list, can_push);
                                 break;
                             } else if (command == "end")
                             {
                                 std::string target = std::any_cast<std::string>(current->alt_next->t.value);
-                                std::vector<Token> list = pop_list(stack);
-        
+                                std::vector<Token> list = pop_list(stack, can_pop);
+
                                 switch (get_command_enum(target))
                                 {
                                     case CommandEnum::IF:
@@ -792,7 +823,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                     {
                                         while (!list.empty() && list.back().type != TokenType::CONDITION_BLOCK)
                                         {
-                                            list = pop_list(stack);
+                                            list = pop_list(stack, can_pop);
                                             reverse_list(list);
                                         }
                                         break;
@@ -801,7 +832,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                     {
                                         while (!list.empty() && list.back().type != TokenType::BLOCK)
                                         {
-                                            list = pop_list(stack);
+                                            list = pop_list(stack, can_pop);
                                             reverse_list(list);
                                         }
                                         break;
@@ -812,7 +843,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                     {
                                         while (!list.empty() && list.back().type != TokenType::LOOP_BLOCK)
                                         {
-                                            list = pop_list(stack);
+                                            list = pop_list(stack, can_pop);
                                             reverse_list(list);
                                         }
 
@@ -831,12 +862,12 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         case CommandEnum::BREAK:
                         {
                             std::string target = std::any_cast<std::string>(current->alt_next->t.value);
-                            std::vector<Token> list = pop_list(stack);
+                            std::vector<Token> list = pop_list(stack, can_pop);
                             reverse_list(list);
     
                             while (!list.empty() && list.back().type != TokenType::LOOP_BLOCK)
                             {
-                                list = pop_list(stack);
+                                list = pop_list(stack, can_pop);
                                 reverse_list(list);
                             }
     
@@ -847,12 +878,12 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         case CommandEnum::CONTINUE:
                         {
                             std::string target = std::any_cast<std::string>(current->alt_next->t.value);
-                            std::vector<Token> list = pop_list(stack);
+                            std::vector<Token> list = pop_list(stack, can_pop);
                             reverse_list(list);
     
                             while (!list.empty() && list.back().type != TokenType::LOOP_BLOCK)
                             {
-                                list = pop_list(stack);
+                                list = pop_list(stack, can_pop);
                                 reverse_list(list);
                             }
     
@@ -872,18 +903,18 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                             Token b = stack.back();
                             stack.pop_back();
 
-                            append_list(stack, {a, b});
+                            append_list(stack, {a, b}, can_push);
                             break;
                         }
 
                         case CommandEnum::SWAP_LIST:
                         {
-                            std::vector<Token> list_a = pop_list(stack);
-                            std::vector<Token> list_b = pop_list(stack);
+                            std::vector<Token> list_a = pop_list(stack, can_pop);
+                            std::vector<Token> list_b = pop_list(stack, can_pop);
                             reverse_list(list_a);
                             reverse_list(list_b);
-                            push_list(stack, list_a);
-                            push_list(stack, list_b);
+                            push_list(stack, list_a, can_push);
+                            push_list(stack, list_b, can_push);
                             break;
                         }
 
@@ -896,7 +927,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
                         case CommandEnum::DUP_X:
                         {
-                            std::vector<Token> list = pop_list(stack);
+                            std::vector<Token> list = pop_list(stack, can_pop);
                             Token count = list.size() == 1 ? list.back() : (Token){.type = TokenType::NULL_TOKEN};
 
                             check_exception(count.type != TokenType::DATA_Number, get_token_string(count) + ": Expected one integer value.");
@@ -911,14 +942,14 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                             check_exception(temp.type != TokenType::CONSTANT, "Constant identifier not provided");
                             check_exception(constants.count(get_token_string(temp)) != 0, "Constant already exists.");
 
-                            constants.insert({std::any_cast<std::string>(temp.value), pop_list(stack).back()});
+                            constants.insert({std::any_cast<std::string>(temp.value), pop_list(stack, can_pop).back()});
                             temp.type = TokenType::NULL_TOKEN;
                             break;
                         }
 
                         case CommandEnum::INCLUDE:
                         {
-                            std::vector<Token> file_list = pop_list(stack);
+                            std::vector<Token> file_list = pop_list(stack, can_pop);
     
                             check_exception(file_list.empty(), "No file path provided.");
     
@@ -964,6 +995,51 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                             break;
                         }
 
+                        case CommandEnum::STRLEN:
+                        {
+                            std::vector<Token> list = pop_list(stack, can_pop);
+                            std::vector<Token> res;
+
+                            for (Token t : list)
+                            {
+                                Token size;
+                                size.type = TokenType::DATA_Number;
+                                size.value = float(get_token_string(t).length());
+                                res.push_back(size);
+                            }
+
+                            push_list(stack, res, can_push);
+                            break;
+                        }
+
+                        case CommandEnum::LEN:
+                        {
+                            Token size;
+                            size.type = TokenType::DATA_Number;
+                            size.value = float(top_list(stack).size());
+                            push_list(stack, {size}, can_push);
+                            break;
+                        }
+
+                        case CommandEnum::NOPOP:
+                        {
+                            can_pop = false;
+                            break;
+                        }
+
+                        case CommandEnum::NOPUSH:
+                        {
+                            can_push = false;
+                            break;
+                        }
+
+                        case CommandEnum::GUARD:
+                        {
+                            can_push = false;
+                            can_pop = false;
+                            break;
+                        }
+
                         case CommandEnum::EXIT:
                         {
                             current = nullptr;
@@ -975,6 +1051,12 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         {
                             throw InterpreterException(command + " : Unknown command.");
                         }
+                    }
+
+                    if (command_enum != CommandEnum::NOPUSH && command_enum != CommandEnum::NOPOP && command_enum != CommandEnum::GUARD)
+                    {
+                        can_push = true;
+                        can_pop = true;
                     }
                     break;
                 }
@@ -988,13 +1070,13 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
                     for (int i = 0; i < functions.at(command).arg_count; i++)
                     {
-                        push_list(function_args, {functions.at(command).argument_tags[i]});
-                        std::vector<Token> values = pop_list(stack);
+                        push_list(function_args, {functions.at(command).argument_tags[i]}, can_push);
+                        std::vector<Token> values = pop_list(stack, can_pop);
                         reverse_list(values);
-                        append_list(function_args, values);
+                        append_list(function_args, values, can_pop);
                     }
 
-                    append_list(stack, function_args);
+                    append_list(stack, function_args, can_push);
 
                     current = functions.at(command).location;
                     break;

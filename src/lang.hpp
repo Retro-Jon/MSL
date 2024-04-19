@@ -20,14 +20,14 @@ enum TokenType
     LIST_END,
     SUB_LIST_START,
     SUB_LIST_END,
-    FUNCTION_CALL,
     USER_FUNCTION,
     CONSTANT,
+    COMMAND,
+    OPERATOR,
+    FUNCTION_CALL,
     CONDITION_BLOCK,
     LOOP_BLOCK,
     BLOCK,
-    COMMAND,
-    OPERATOR
 };
 
 enum CommandEnum
@@ -64,6 +64,11 @@ enum CommandEnum
     DUP_X,
     DEFINE,
     INCLUDE,
+    STRLEN,
+    LEN,
+    NOPOP,
+    NOPUSH,
+    GUARD,
     EXIT
 };
 

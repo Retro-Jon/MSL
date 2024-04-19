@@ -98,6 +98,16 @@ CommandEnum get_command_enum(const std::string &val)
         return CommandEnum::DEFINE;
     if (val == "include")
         return CommandEnum::INCLUDE;
+    if (val == "strlen")
+        return CommandEnum::STRLEN;
+    if (val == "len")
+        return CommandEnum::LEN;
+    if (val == "no-pop")
+        return CommandEnum::NOPOP;
+    if (val == "no-push")
+        return CommandEnum::NOPUSH;
+    if (val == "guard")
+        return CommandEnum::GUARD;
     if (val == "exit")
         return CommandEnum::EXIT;
 

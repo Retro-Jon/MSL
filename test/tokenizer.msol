@@ -13,5 +13,7 @@ $ _lorem_ ["Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eius
 #    exit
 #end
 
-[<input>] get [' '] (tokenize) println
+#[<input> ""] println
+[<input>] get [25] (right) println
+#[<input>] get ['.'] (tokenize) println
 

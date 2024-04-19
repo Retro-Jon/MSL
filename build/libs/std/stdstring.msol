@@ -1,15 +1,21 @@
-$ (get-length) [<text.l>] defunc
-    [<length.l> 0]
+$ (left) [<text.l> <num.l>] defunc
+    [<res.l> ""]
 
-    [true] while
-        [<text.l>] get {<length.l>} at ?
-            break
-        end
-
-        [<length.l>] [<length.l> 1] + =
+    [<i.l>] [<num.l> 1] - [<text.l>] get strlen {1} - {1} [2] merge-x for
+        [<res.l>] [<res.l>] [<text.l>] get {<i.l>} at merge + =
     end
 
-    [<length.l>] get return
+    [<res.l>] get return
+end
+
+$ (right) [<text.l> <num.l>] defunc
+    [<res.l> ""]
+
+    [<i.l> -1] [<text.l>] get strlen {<num.l> 1} - {1} merge for
+        [<res.l>] [<res.l>] [<text.l>] get {<i.l>} at merge + =
+    end
+
+    [<res.l>] get return
 end
 
 $ (get-next-token) [<text.l> <start.l> <delim.l>] defunc
@@ -17,7 +23,7 @@ $ (get-next-token) [<text.l> <start.l> <delim.l>] defunc
     [<index.l>] [<start.l>] get merge
 
     # start at <start.l> - 1, go till <text.l> length, and step by one.
-    [<i.l>] [<start.l>] get {1} - [<text.l>] get (get-length) [3] merge-x {1} for
+    [<i.l>] [<start.l> 1] - [<text.l>] get strlen [3] merge-x {1} for
         [<c.b>]
         [<text.l>] get {<i.l>} at ?
             [<index.l>] [<i.l>] get =
@@ -26,7 +32,7 @@ $ (get-next-token) [<text.l> <start.l> <delim.l>] defunc
         merge
 
         [<c.b> <delim.l>] == if
-            [<index.l>] [<i.l>] get =
+            [<index.l>] [<i.l> 1] + =
             break
         end
 
@@ -37,13 +43,17 @@ $ (get-next-token) [<text.l> <start.l> <delim.l>] defunc
 end
 
 $ (tokenize) [<input.l> <delim.l>] defunc
-    [<length.l>] [<input.l>] get (get-length) merge
+    [<length.l>] [<input.l>] get strlen merge
     [<count.l> 0]
 
     [<current.l> ""] [<length.l>] get dup-x
 
-    [<i.l> -1] [<length.l>] get merge {1} for
+    [<i.l> -1 <length.l> 1] for
         [<input.l>] get [<i.l>] get [<delim.l>] get (get-next-token)
+            [<text.m> ""] == if
+                continue
+            end
+
             [<text.m>] get [<current.l> <count.l>] at swap-list =
             [<index.m>] get [<i.l>] swap-list =
 
@@ -53,11 +63,9 @@ $ (tokenize) [<input.l> <delim.l>] defunc
     [<output.l> ""]
     [""] [<count.l>] get dup-x drop
 
-    [<i.l> -1] [<count.l>] get {1} - merge {1} for
+    [<i.l> -1] [<count.l> 1] - merge {1} for
         [<output.l>] at {2 <i.l>} + [<current.l> <i.l>] at get =
     end
-    [<output.l>] println
 
     return
 end
-
