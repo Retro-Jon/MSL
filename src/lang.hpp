@@ -66,9 +66,6 @@ enum CommandEnum
     INCLUDE,
     STRLEN,
     LEN,
-    NOPOP,
-    NOPUSH,
-    GUARD,
     EXIT
 };
 
