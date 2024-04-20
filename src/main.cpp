@@ -18,7 +18,7 @@ int main(int argc, char** argv)
         std::string code = load_file(argv[1]);
         std::vector<Token> stack;
 
-        Node* program = tokenize(executable_path, program_path, code);
+        Node* program = tokenize(executable_path, program_path, code, program_path);
         if (lex(program))
             if (parse(program))
                 interpret(executable_path, get_base_path(program_path), program, stack);
@@ -27,7 +27,7 @@ int main(int argc, char** argv)
     }
     else if (argc == 1)
     {
-        std::string program_path = argv[0];
+        std::string program_path = "user session";
 
         std::vector<Token> stack;
         std::cout << "REPL Mode" << std::endl;
@@ -38,7 +38,8 @@ int main(int argc, char** argv)
             std::cout << "\nEnter commands:\n\n> ";
             std::getline(std::cin, input);
 
-            Node* program = tokenize(executable_path, program_path, input);
+            Node* program = tokenize(executable_path, program_path, input, program_path);
+
             if (lex(program))
                 if (parse(program))
                     interpret(executable_path, program_path, program, stack);

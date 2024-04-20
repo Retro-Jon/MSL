@@ -1,5 +1,4 @@
 #include "lang.hpp"
-#include <algorithm>
 #include <any>
 #include <iostream>
 #include <ostream>
@@ -149,7 +148,6 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
     current = program;
 
     std::vector<Token> stack;
-    std::vector<std::string> includes;
 
     const std::string stdlibpath = executable_path + "libs/std/";
 
@@ -922,34 +920,19 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         {
                             std::vector<Token> file_list = pop_list(stack);
     
-                            check_exception(file_list.empty(), "No file path provided.");
+                            check_exception(file_list.size() != 1, "Expected one file name.");
     
-                            std::string new_code = "";
+                            Token f = get_tag(stack, file_list.back());
+
+                            check_exception(f.type != TokenType::DATA_String, "Expected a string.");
+                            check_exception(!is_valid_extension(get_token_string(f), EXTENSION), "Invalid file extension: " + get_token_string(f) + "\nExpected " + EXTENSION + " extension.");
     
-                            // Load files
-                            for (int i = 0; i < file_list.size(); i++)
-                            {
-                                Token f = file_list[i];
-                                check_exception(f.type != TokenType::DATA_String, "Expected a string.");
-                                check_exception(!is_valid_extension(get_token_string(f), EXTENSION), "Invalid file extension: " + get_token_string(f) + "\nExpected " + EXTENSION + " extension.");
-    
-                                std::string file_name = get_token_string(f);
-    
-                                if (std::find(includes.begin(), includes.end(), file_name) != includes.end())
-                                    continue;
-    
-                                includes.push_back(file_name);
-    
-                                std::string file_path = (file_name.substr(0, 3) == "std" ? stdlibpath : program_path) + file_name;
-                        
-                                std::string file_content = load_file(file_path);
-                            
-                                check_exception(file_content.empty(), "Could not load file: " + file_path);
-    
-                                new_code += file_content + "\n";
-                            }
-    
-                            Node* new_nodes = tokenize(executable_path, program_path, new_code);
+                            std::string file_name = get_token_string(f);
+                            std::string file_path = (file_name.substr(0, 3) == "std" ? stdlibpath : program_path) + file_name;
+                            std::string file_content = load_file(file_path);
+                            file_content += "\n";
+
+                            Node* new_nodes = tokenize(executable_path, program_path, file_content, file_name);
 
                             check_exception(!lex(new_nodes), "Lexical analysis failed.");
                             check_exception(!parse(new_nodes), "Parsing failed.");
@@ -1043,7 +1026,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
             } else {
                 print_list(stack);
                 std::cout << "\nStack reverted to backup upon error." << std::endl;
-                error_msg(current->line, command, e.what());
+                error_msg(current, e.what());
                 break;
             }
         }

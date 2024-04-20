@@ -1,8 +1,9 @@
 #include "lang.hpp"
-#include <vector>
 #include <algorithm>
 
-Node* tokenize(const std::string &executable_path, const std::string &program_path, const std::string &code)
+std::vector<std::string> included_files;
+
+Node* tokenize(const std::string &executable_path, const std::string &program_path, const std::string &code, const std::string &file_name)
 {
     Node* list = new Node();
     Node* pointer = list;
@@ -17,11 +18,15 @@ Node* tokenize(const std::string &executable_path, const std::string &program_pa
     std::string directive_arg = "";
 
     std::string stdlibpath = executable_path + "libs/std/";
-    std::vector<std::string> includes;
 
     std::string code_string(code);
     code_string += "\n";
     int line_count = 1;
+
+    if (std::count(included_files.begin(), included_files.end(), file_name.c_str()) == 0)
+        included_files.push_back(file_name.c_str());
+
+    int file = std::find(included_files.begin(), included_files.end(), file_name) - included_files.begin();
 
     for (char c : code_string)
     {
@@ -61,10 +66,8 @@ Node* tokenize(const std::string &executable_path, const std::string &program_pa
 
         if (!directive.empty())
         {
-            if (directive == "include" && std::find(includes.begin(), includes.end(), directive_arg) == includes.end())
+            if (directive == "include" && std::find(included_files.begin(), included_files.end(), directive_arg) == included_files.end())
             {
-                includes.push_back(directive_arg);
-    
                 std::string file_path;
 
                 if (directive_arg.substr(0, 3) == "std")
@@ -73,7 +76,7 @@ Node* tokenize(const std::string &executable_path, const std::string &program_pa
                     file_path = program_path + directive_arg;
                 
                 std::string file_content = load_file(file_path);
-                Node* new_nodes = tokenize(executable_path, program_path, file_content);
+                Node* new_nodes = tokenize(executable_path, program_path, file_path, file_content);
                 pointer->default_next = new_nodes;
 
                 while (pointer->default_next != nullptr)
@@ -99,6 +102,7 @@ Node* tokenize(const std::string &executable_path, const std::string &program_pa
                     Node* n_node = new Node();
                     n_node->line = c == '\n' ? line_count - 1 : line_count;
                     n_node->t.value = current;
+                    n_node->file_source = file;
                     pointer->default_next = n_node;
                     pointer = pointer->default_next;
                 }
@@ -111,6 +115,7 @@ Node* tokenize(const std::string &executable_path, const std::string &program_pa
             Node* n_node = new Node();
             n_node->line = c == '\n' ? line_count - 1 : line_count;
             n_node->t.value = current;
+            n_node->file_source = file;
             pointer->default_next = n_node;
             pointer = pointer->default_next;
             current.clear();

@@ -79,6 +79,7 @@ struct Node
 {
     Token t;
     int line;
+    int file_source;
     Node* default_next = nullptr;
     Node* alt_next = nullptr;
 };
@@ -114,7 +115,9 @@ struct Function
     int arg_count = 0;
 };
 
-Node* tokenize(const std::string &executable_path, const std::string &program_path, const std::string &code);
+extern std::vector<std::string> included_files;
+
+Node* tokenize(const std::string &executable_path, const std::string &program_path, const std::string &code, const std::string &file_name = "user session");
 bool lex(Node* Nodes);
 bool parse(Node* Nodes);
 bool interpret(const std::string &executable_path, const std::string &program_path, Node* program, std::vector<Token> &backup_stack);
@@ -126,7 +129,7 @@ std::string get_token_string(const Token &t = {.type = TokenType::NULL_TOKEN});
 std::string trim_num_string(const std::string &num);
 
 int find_tag(const std::vector<Token> &list, const Token &tag);
-void error_msg(const int &line, const std::string &token_string, const std::string &explanation);
+void error_msg(const Node* node, const char* explanation);
 bool is_valid_extension(const std::string &file, const std::string &extension);
 std::string getexepath();
 std::string get_base_path(const std::string &file);

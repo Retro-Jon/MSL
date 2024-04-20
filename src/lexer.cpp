@@ -63,7 +63,7 @@ bool lex(Node* nodes)
                     pointer->t.type = TokenType::TAG_GLOBAL;
                 else
                 {
-                    error_msg(pointer->line, val, "Incomplete TAG: " + val);
+                    error_msg(pointer, std::string("Incomplete TAG: " + val).c_str());
                     return false;
                     break;
                 }
@@ -92,7 +92,7 @@ bool lex(Node* nodes)
                         if (!isdigit(c) && c != '.' && c != '-')
                         {
                             pointer->t.type = TokenType::DATA_String;
-                            error_msg(pointer->line, val, "Numeric values cannot include letters.");
+                            error_msg(pointer, "Numeric values cannot include letters.");
                             return false;
                         }
                         i++;
@@ -115,7 +115,7 @@ bool lex(Node* nodes)
         switch (pointer->t.type)
         {
             case TokenType::NULL_TOKEN:
-                error_msg(pointer->line, val, "Unidentified token");
+                error_msg(pointer, "Unidentified token");
                 return false;
                 break;
             
@@ -130,7 +130,7 @@ bool lex(Node* nodes)
                 {
                     if (char_data.front() != '\\')
                     {
-                        error_msg(pointer->line, val, "A Char can only be 2 character long with the exception of a leading \\");
+                        error_msg(pointer, "A Char can only be 2 character long with the exception of a leading \\");
                         return false;
                     }
                 }
@@ -154,7 +154,7 @@ bool lex(Node* nodes)
                     pointer->t.value = false;
                 else
                 {
-                    error_msg(pointer->line, val, "Unknown boolean value.");
+                    error_msg(pointer, "Unknown boolean value.");
                     return false;
                 }
                 break;
@@ -164,7 +164,7 @@ bool lex(Node* nodes)
             {
                 if (get_command_enum(std::any_cast<std::string>(pointer->t.value)) == CommandEnum::UNKNOWN_COMMAND)
                 {
-                    error_msg(pointer->line, val, "Unknown command.");
+                    error_msg(pointer, "Unknown command.");
                     return false;
                 }
                 break;
