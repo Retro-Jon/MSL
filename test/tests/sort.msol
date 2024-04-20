@@ -1,0 +1,24 @@
+$ (bubble-sort) [<list.l>] defunc
+    len [] swap {1} - {<count.l>} swap
+
+    [<i.l> -1 <count.l> 1] for
+        [<a.l>] [<list.l> <i.l>] at merge
+    
+        [<j.l> <i.l>] [<count.l> 1] - {1} merge for
+            [<b.l>] [<list.l> <j.l>] at merge
+
+            [<a-val.l>] [<a.l>] get get merge
+            [<b-val.l>] [<b.l>] get get merge
+
+            [<a-val.l> <b-val.l>] > if
+                [<a.l>] get [<b-val.l>] get =
+                [<b.l>] get [<a-val.l>] get =
+            end
+        end
+    end
+
+    [<list.l>] at get-list return
+end
+
+[949 123 4838 4 1 2 555 23 55 12 32 142 3492 523] (bubble-sort) println
+

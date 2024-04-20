@@ -62,6 +62,7 @@ enum CommandEnum
     SWAP_LIST,
     DUP,
     DUP_X,
+    DUP_LIST,
     DEFINE,
     INCLUDE,
     STRLEN,

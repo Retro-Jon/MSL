@@ -94,6 +94,8 @@ CommandEnum get_command_enum(const std::string &val)
         return CommandEnum::DUP;
     if (val == "dup-x")
         return CommandEnum::DUP_X;
+    if (val == "dup-list")
+        return CommandEnum::DUP_LIST;
     if (val == "define")
         return CommandEnum::DEFINE;
     if (val == "include")

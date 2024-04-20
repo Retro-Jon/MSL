@@ -4,6 +4,7 @@
 #include <ostream>
 #include <string>
 #include <map>
+#include <unistd.h>
 
 #ifdef DEBUG
 #include <chrono>
@@ -903,6 +904,14 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
                             for (int i = 0; i < int(std::any_cast<float>(count.value)); i++)
                                 stack.push_back(stack.back());
+                            break;
+                        }
+
+                        case CommandEnum::DUP_LIST:
+                        {
+                            std::vector<Token> list = top_list(stack);
+                            reverse_list(list);
+                            push_list(stack, list);
                             break;
                         }
 
