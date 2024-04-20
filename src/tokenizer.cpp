@@ -76,7 +76,7 @@ Node* tokenize(const std::string &executable_path, const std::string &program_pa
                     file_path = program_path + directive_arg;
                 
                 std::string file_content = load_file(file_path);
-                Node* new_nodes = tokenize(executable_path, program_path, file_path, file_content);
+                Node* new_nodes = tokenize(executable_path, program_path, file_content, file_path);
                 pointer->default_next = new_nodes;
 
                 while (pointer->default_next != nullptr)
