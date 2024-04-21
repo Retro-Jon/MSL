@@ -6,11 +6,7 @@
 [<a>] [<a> 1] - =
 [<a>] [<a> 3] * =
 [<a>] [<a> 2] / =
-["a = " <a>] print [""] println
-
-# Concatination
-
-["Hello" "World!" "\nAgain."] + println
+["a = " <a> "\n"] print
 
 # Math with offsets
 

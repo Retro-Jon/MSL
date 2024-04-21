@@ -104,10 +104,176 @@ CommandEnum get_command_enum(const std::string &val)
         return CommandEnum::STRLEN;
     if (val == "len")
         return CommandEnum::LEN;
+    if (val == "cat")
+        return CommandEnum::CAT;
     if (val == "exit")
         return CommandEnum::EXIT;
 
     return CommandEnum::UNKNOWN_COMMAND;
+}
+
+const char* get_command_string(CommandEnum c)
+{
+    switch (c)
+    {
+        case CommandEnum::PRINT:
+            return "print";
+        case CommandEnum::PRINTLN:
+            return "println";
+        case CommandEnum::INPUT:
+            return "input";
+        case CommandEnum::PRINT_STACK:
+            return "print-stack";
+        case CommandEnum::DROP:
+            return "drop";
+        case CommandEnum::DROP_LIST:
+            return "drop-list";
+        case CommandEnum::AT:
+            return "at";
+        case CommandEnum::GET:
+            return "get";
+        case CommandEnum::GET_LIST:
+            return "get-list";
+        case CommandEnum::GET_LIST_VALUES:
+            return "get-list-values";
+        case CommandEnum::MERGE:
+            return "merge";
+        case CommandEnum::MERGE_X:
+            return "merge-x";
+        case CommandEnum::INT:
+            return "int";
+        case CommandEnum::IF:
+            return "if";
+        case CommandEnum::ERROR_HANDLER:
+            return "?";
+        case CommandEnum::BEGIN:
+            return "begin";
+        case CommandEnum::LOOP:
+            return "loop";
+        case CommandEnum::WHILE:
+            return "while";
+        case CommandEnum::FOR:
+            return "for";
+        case CommandEnum::DEFUNC:
+            return "defunc";
+        case CommandEnum::CACHE:
+            return "$";
+        case CommandEnum::RETURN:
+            return "return";
+        case CommandEnum::END:
+            return "end";
+        case CommandEnum::BREAK:
+            return "break";
+        case CommandEnum::CONTINUE:
+            return "continue";
+        case CommandEnum::SWAP:
+            return "swap";
+        case CommandEnum::SWAP_LIST:
+            return "swap-list";
+        case CommandEnum::DUP:
+            return "dup";
+        case CommandEnum::DUP_X:
+            return "dup-x";
+        case CommandEnum::DUP_LIST:
+            return "dup-list";
+        case CommandEnum::DEFINE:
+            return "define";
+        case CommandEnum::INCLUDE:
+            return "include";
+        case CommandEnum::STRLEN:
+            return "strlen";
+        case CommandEnum::LEN:
+            return "len";
+        case CommandEnum::CAT:
+            return "cat";
+        case CommandEnum::EXIT:
+            return "exit";
+        default:
+            return "UNKNOWN_COMMAND";
+    }
+}
+
+OperatorEnum get_operator_enum(const std::string &val)
+{
+    if (val == "+")
+        return OperatorEnum::ADDITION;
+    if (val == "-")
+        return OperatorEnum::SUBTRACTION;
+    if (val == "*")
+        return OperatorEnum::MULTIPLICATION;
+    if (val == "/")
+        return OperatorEnum::DIVISION;
+    if (val == "++")
+        return OperatorEnum::INCREMENT;
+    if (val == "--")
+        return OperatorEnum::DECREMENT;
+    if (val == "%")
+        return OperatorEnum::MODULO;
+    if (val == "=")
+        return OperatorEnum::ASSIGNMENT;
+    if (val == "~")
+        return OperatorEnum::NEGATE;
+    if (val == "and")
+        return OperatorEnum::AND;
+    if (val == "or")
+        return OperatorEnum::OR;
+    if (val == "==")
+        return OperatorEnum::EQUAL;
+    if (val == "!=")
+        return OperatorEnum::NOT_EQUAL;
+    if (val == ">")
+        return OperatorEnum::GREATER_THAN;
+    if (val == ">=")
+        return OperatorEnum::GREATER_THAN_EQUAL;
+    if (val == "<")
+        return OperatorEnum::LESS_THAN;
+    if (val == "<=")
+        return OperatorEnum::LESS_THAN_EQUAL;
+
+    return OperatorEnum::UNKNOWN_OPERATOR;
+}
+
+const char* get_operator_string(const OperatorEnum &op)
+{
+    switch (op)
+    {
+        case OperatorEnum::ADDITION:
+            return "+";
+        case OperatorEnum::SUBTRACTION:
+            return "-";
+        case OperatorEnum::MULTIPLICATION:
+            return "*";
+        case OperatorEnum::DIVISION:
+            return "/";
+        case OperatorEnum::INCREMENT:
+            return "++";
+        case OperatorEnum::DECREMENT:
+            return "--";
+        case OperatorEnum::MODULO:
+            return "%";
+        case OperatorEnum::ASSIGNMENT:
+            return "=";
+        case OperatorEnum::NEGATE:
+            return "~";
+        case OperatorEnum::AND:
+            return "and";
+        case OperatorEnum::OR:
+            return "or";
+        case OperatorEnum::EQUAL:
+            return "==";
+        case OperatorEnum::NOT_EQUAL:
+            return "!=";
+        case OperatorEnum::GREATER_THAN:
+            return ">";
+        case OperatorEnum::GREATER_THAN_EQUAL:
+            return ">=";
+        case OperatorEnum::LESS_THAN:
+            return "<";
+        case OperatorEnum::LESS_THAN_EQUAL:
+            return "<=";
+        default:
+            return "UNKNOWN_OPERATOR";
+    }
 }
 
 std::string get_token_string(const Token &t)
@@ -122,12 +288,18 @@ std::string get_token_string(const Token &t)
         case TokenType::TAG_LOCAL:
         case TokenType::TAG_BLOCK:
         case TokenType::TAG_MEMBER:
-        case TokenType::OPERATOR:
-        case TokenType::COMMAND:
         case TokenType::USER_FUNCTION:
         case TokenType::DATA_String:
         case TokenType::CONSTANT:
             return std::any_cast<std::string>(t.value);
+            break;
+
+        case TokenType::COMMAND:
+            return std::string(get_command_string(std::any_cast<CommandEnum>(t.value)));
+            break;
+
+        case TokenType::OPERATOR:
+            return std::string(get_operator_string(std::any_cast<OperatorEnum>(t.value)));
             break;
 
         case TokenType::DATA_Char:

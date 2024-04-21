@@ -67,7 +67,30 @@ enum CommandEnum
     INCLUDE,
     STRLEN,
     LEN,
+    CAT,
     EXIT
+};
+
+enum OperatorEnum
+{
+    UNKNOWN_OPERATOR,
+    ADDITION,
+    SUBTRACTION,
+    MULTIPLICATION,
+    DIVISION,
+    INCREMENT,
+    DECREMENT,
+    MODULO,
+    ASSIGNMENT,
+    NEGATE,
+    AND,
+    OR,
+    EQUAL,
+    NOT_EQUAL,
+    GREATER_THAN,
+    GREATER_THAN_EQUAL,
+    LESS_THAN,
+    LESS_THAN_EQUAL
 };
 
 struct Token
@@ -127,6 +150,8 @@ std::string load_file(const std::string &path);
 void delete_nodes(Node* pointer);
 CommandEnum get_command_enum(const std::string &val);
 std::string get_token_string(const Token &t = {.type = TokenType::NULL_TOKEN});
+OperatorEnum get_operator_enum(const std::string &val);
+const char* get_command_string(CommandEnum c);
 std::string trim_num_string(const std::string &num);
 
 int find_tag(const std::vector<Token> &list, const Token &tag);

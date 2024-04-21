@@ -2,7 +2,7 @@ $ (left) [<text.l> <num.l>] defunc
     [<res.l> ""]
 
     [<i.l>] [<num.l> 1] - [<text.l>] get strlen {1} - {1} [2] merge-x for
-        [<res.l>] [<res.l>] [<text.l>] get {<i.l>} at merge + =
+        [<res.l>] [<res.l>] [<text.l>] get {<i.l>} at merge cat =
     end
 
     [<res.l>] get return
@@ -12,7 +12,7 @@ $ (right) [<text.l> <num.l>] defunc
     [<res.l> ""]
 
     [<i.l> -1] [<text.l>] get strlen {<num.l> 1} - {1} merge for
-        [<res.l>] [<res.l>] [<text.l>] get {<i.l>} at merge + =
+        [<res.l>] [<res.l>] [<text.l>] get {<i.l>} at merge cat =
     end
 
     [<res.l>] get return
@@ -36,7 +36,7 @@ $ (get-next-token) [<text.l> <start.l> <delim.l>] defunc
             break
         end
 
-        [<result.l>] [<result.l> <c.b>] + =
+        [<result.l>] [<result.l> <c.b>] cat =
     end
 
     [<text.m>] [<result.l>] get {<index.m>} [<index.l>] get [3] merge-x return

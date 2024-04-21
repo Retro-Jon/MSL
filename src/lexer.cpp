@@ -1,11 +1,6 @@
 #include "lang.hpp"
+#include <any>
 #include <cctype>
-#include <set>
-
-const std::set<std::string> operators = {
-    "+", "-", "*", "/", "++", "--", "%", "=", "~",
-    "and", "or", "==", "!=", ">", ">=", "<", "<="
-};
 
 bool lex(Node* nodes)
 {
@@ -42,16 +37,45 @@ bool lex(Node* nodes)
         if (pointer->t.type == TokenType::NULL_TOKEN)
         {
             if (val.front() == '\'' && val.back() == '\'')
+            {
                 pointer->t.type = TokenType::DATA_Char;
-            else if (val.front() == '"' && val.back() == '"')
+                std::string char_data = val;
+                char_data.erase(char_data.begin());
+                char_data.erase(char_data.end() - 1);
+
+                if (char_data.length() > 1)
+                {
+                    if (char_data.front() != '\\')
+                    {
+                        error_msg(pointer, "A Char can only be 1 character long with the exception of a leading \\");
+                        return false;
+                    }
+                }
+                
+                pointer->t.value = std::any_cast<char>(char_data.front());
+
+            } else if (val.front() == '"' && val.back() == '"')
             {
                 pointer->t.type = TokenType::DATA_String;
                 val.erase(0, 1);
                 val.erase(val.length() - 1, 1);
                 pointer->t.value = val;
+
             } else if (val == "true" || val == "false")
+            {
                 pointer->t.type = TokenType::DATA_Bool;
-            else if (val.length() > 2 && val.front() == '<' && val.back() == '>')
+                
+                if (val == "true")
+                    pointer->t.value = true;
+                else if (val == "false")
+                    pointer->t.value = false;
+                else
+                {
+                    error_msg(pointer, "Unknown boolean value.");
+                    return false;
+                }
+ 
+            } else if (val.length() > 2 && val.front() == '<' && val.back() == '>')
             {
                 if (val.find(".local>") != std::string::npos || val.find(".l>") != std::string::npos)
                     pointer->t.type = TokenType::TAG_LOCAL;
@@ -67,6 +91,7 @@ bool lex(Node* nodes)
                     return false;
                     break;
                 }
+
             } else {
                 if (isdigit(val.front()) || (val.front() == '-' && val.length() > 1))
                 {
@@ -82,6 +107,8 @@ bool lex(Node* nodes)
                     pointer->t.type = not_num ? TokenType::DATA_Number : pointer->t.type;
                     if (not_num == false)
                         pointer->t.type = TokenType::DATA_Number;
+
+                    pointer->t.value = std::any_cast<float>(std::stof(val));
                 }
 
                 if (pointer->t.type != TokenType::NULL_TOKEN)
@@ -98,7 +125,21 @@ bool lex(Node* nodes)
                         i++;
                     }
                 } else {
-                    pointer->t.type = (operators.find(val) != operators.end()) ? TokenType::OPERATOR : TokenType::COMMAND;
+                    OperatorEnum o = get_operator_enum(val);
+                    CommandEnum c = get_command_enum(val);
+
+                    if (o != OperatorEnum::UNKNOWN_OPERATOR)
+                    {
+                        pointer->t.value = o;
+                        pointer->t.type = TokenType::OPERATOR;
+                    } else if (c != CommandEnum::UNKNOWN_COMMAND)
+                    {
+                        pointer->t.value = c;
+                        pointer->t.type = TokenType::COMMAND;
+                    } else {
+                        error_msg(pointer, "Unknown command.");
+                        return false;
+                    }
                 }
             }
         }
@@ -110,7 +151,7 @@ bool lex(Node* nodes)
 
     while (pointer != nullptr)
     {
-        std::string val = std::any_cast<std::string>(pointer->t.value);
+        std::string val = get_token_string(pointer->t);
         
         switch (pointer->t.type)
         {
@@ -118,57 +159,6 @@ bool lex(Node* nodes)
                 error_msg(pointer, "Unidentified token");
                 return false;
                 break;
-            
-            case TokenType::DATA_Char:
-            {
-                char c;
-                std::string char_data = val;
-                char_data.erase(char_data.begin());
-                char_data.erase(char_data.end() - 1);
-
-                if (char_data.length() > 1)
-                {
-                    if (char_data.front() != '\\')
-                    {
-                        error_msg(pointer, "A Char can only be 2 character long with the exception of a leading \\");
-                        return false;
-                    }
-                }
-                
-                c = char_data.front();
-                pointer->t.value = std::any_cast<char>(c);
-                break;
-            }
-
-            case TokenType::DATA_Number:
-            {
-                pointer->t.value = std::any_cast<float>(std::stof(val));
-                break;
-            }
-
-            case TokenType::DATA_Bool:
-            {
-                if (val == "true")
-                    pointer->t.value = true;
-                else if (val == "false")
-                    pointer->t.value = false;
-                else
-                {
-                    error_msg(pointer, "Unknown boolean value.");
-                    return false;
-                }
-                break;
-            }
-
-            case TokenType::COMMAND:
-            {
-                if (get_command_enum(std::any_cast<std::string>(pointer->t.value)) == CommandEnum::UNKNOWN_COMMAND)
-                {
-                    error_msg(pointer, "Unknown command.");
-                    return false;
-                }
-                break;
-            }
 
             default:
                 break;
