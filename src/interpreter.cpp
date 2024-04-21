@@ -1049,6 +1049,11 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
     std::cout << "\nExecution time: " << duration.count() << " milliseconds" << std::endl;
 #endif
 
+    for (std::pair<std::string, Function> f : functions)
+    {
+        delete[] f.second.argument_tags;
+    }
+
     if (exception_message.empty())
         backup_stack = stack;
 
