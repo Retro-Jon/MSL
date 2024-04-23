@@ -21,6 +21,9 @@ std::string load_file(const std::string &path)
         file.close();
     }
 
+    if (res.empty())
+        res = "[\"Could not open " + path + "\"] print";
+
     return res;
 }
 

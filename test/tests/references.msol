@@ -1,0 +1,13 @@
+[<a> 0]
+
+$ (modify-source) [<item.l>] defunc
+    # Get the index stored in <item.l>
+    # Set the value at the index = 5
+    [<item.l>] get [5] =
+end
+
+# Pass the index of <a> to (modify-source)
+[<a>] at (modify-source)
+
+[<a>] println
+

@@ -5,10 +5,10 @@ $ (bubble-sort) [<list.l>] defunc
         [<a.l>] [<list.l> <i.l>] at merge
     
         [<j.l> <i.l>] [<count.l> 1] - {1} merge for
-            [<b.l>] [<list.l> <j.l>] at merge
+            [<list.l> <j.l>] at {<b.l>} swap
 
-            [<a-val.l>] [<a.l>] get get merge
-            [<b-val.l>] [<b.l>] get get merge
+            [<a.l>] get get {<a-val.l>} swap
+            [<b.l>] get get {<b-val.l>} swap
 
             [<a-val.l> <b-val.l>] > if
                 [<a.l>] get [<b-val.l>] get =
