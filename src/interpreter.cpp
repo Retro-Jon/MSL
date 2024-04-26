@@ -158,8 +158,6 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
     const std::string stdlibpath = executable_path + "libs/std/";
 
     append_list(stack, backup_stack);
-
-    bool in_list = false;
     Token temp;
 
 #ifdef DEBUG
@@ -173,18 +171,11 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
         try {
             switch (current->t.type)
             {
-                case TokenType::LIST_START:
-                    append_list(stack, {current->t});
                 case TokenType::SUB_LIST_START:
                     check_exception(stack.empty(), "No lists are present on the stack.");
-                    in_list = true;
                     break;
             
-                case TokenType::LIST_END:
-                case TokenType::SUB_LIST_END:
-                    in_list = false;
-                    break;
-            
+                case TokenType::LIST_START:
                 case TokenType::TAG_GLOBAL:
                 case TokenType::TAG_LOCAL:
                 case TokenType::TAG_BLOCK:
