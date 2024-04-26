@@ -153,6 +153,7 @@ std::string get_token_string(const Token &t = {.type = TokenType::NULL_TOKEN});
 OperatorEnum get_operator_enum(const std::string &val);
 const char* get_command_string(CommandEnum c);
 std::string trim_num_string(const std::string &num);
+bool is_num(const std::string &val);
 
 int find_tag(const std::vector<Token> &list, const Token &tag);
 void error_msg(const Node* node, const char* explanation);

@@ -37,6 +37,23 @@ void delete_nodes(Node* pointer)
     pointer = nullptr;
 }
 
+bool is_num(const std::string &val)
+{
+    bool is_num = false;
+    if (isdigit(val.front()) || (val.front() == '-' && val.length() > 1))
+    {
+        for (char c : val)
+        {
+            is_num = (isdigit(c) || c == '.' || c == '-');
+
+            if (!is_num)
+                break;
+        }
+    }
+
+    return is_num;
+}
+
 CommandEnum get_command_enum(const std::string &val)
 {
     if (val == "print")

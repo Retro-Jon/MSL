@@ -1,0 +1,32 @@
+@include stdstring.msol
+
+[<content> ""]
+
+[true] while
+    [<input>] input merge
+
+    [<input> ""] == if
+        [<content>] dup-list get {"\n"} cat =
+        continue
+    end
+
+    [<command>] [<input>] get [' '] (tokenize) merge
+
+    [<command> "!q"] == if
+        ["Are you sure you want to quit? [Y/n] "] print
+
+        ["Y"] input merge == if
+            exit
+        end
+
+        continue
+    end
+
+    [<command> "!ls"] == if
+        [<content>] ['\n'] (tokenize) println
+        continue
+    end
+
+    [<content>] dup-list get [<input>] get merge {"\n"} cat =
+end
+

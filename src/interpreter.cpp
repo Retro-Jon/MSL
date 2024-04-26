@@ -245,6 +245,25 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
                     reverse_list(values);
                     OperatorEnum op = std::any_cast<OperatorEnum>(current->t.value);
+                    
+                    auto greater = [](const Token &a, const Token &b)
+                    {
+                        check_exception(a.type != b.type, "Mismatched Types");
+
+                        switch (a.type)
+                        {
+                            case TokenType::DATA_Bool:
+                                return std::any_cast<bool>(a.value) > std::any_cast<bool>(b.value);
+                            case TokenType::DATA_Char:
+                                return std::any_cast<char>(a.value) > std::any_cast<char>(b.value);
+                            case TokenType::DATA_String:
+                                return std::any_cast<std::string>(a.value) > std::any_cast<std::string>(b.value);
+                            case TokenType::DATA_Number:
+                                return std::any_cast<float>(a.value) > std::any_cast<float>(b.value);
+                            default:
+                                return false;
+                        }
+                    };
 
                     switch (op)
                     {
@@ -262,11 +281,8 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         }
 
                         case OperatorEnum::ADDITION:
-                        case OperatorEnum::SUBTRACTION:
-                        case OperatorEnum::MULTIPLICATION:
-                        case OperatorEnum::DIVISION:
                         {
-                            res = get_tag(stack, values[0]);
+                            res = get_tag(stack, values.front());
                             check_exception((!is_value(res)), get_token_string(res) + " : Expected a numeric value.");
 
                             for (int v = 1; v < values.size(); v++)
@@ -274,39 +290,82 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                 Token val = get_tag(stack, values[v]);
 
                                 check_exception(val.type != DATA_Number, get_token_string(val) + " : Expected a numeric value.");
-
-                                switch (op)
-                                {
-                                    case OperatorEnum::ADDITION:
-                                    {
-                                        res.value = std::any_cast<float>(res.value) + std::any_cast<float>(val.value);
-                                        break;
-                                    }
-                                    case OperatorEnum::SUBTRACTION:
-                                    {
-                                        res.value = std::any_cast<float>(res.value) - std::any_cast<float>(val.value);
-                                        break;
-                                    }
-                                    case OperatorEnum::MULTIPLICATION:
-                                    {
-                                        res.value = std::any_cast<float>(res.value) * std::any_cast<float>(val.value);
-                                        break;
-                                    }
-                                    case OperatorEnum::DIVISION:
-                                    {
-                                        check_exception(std::any_cast<float>(res.value) == 0, "Divide by Zero.");
-                                        res.value = std::any_cast<float>(res.value) / std::any_cast<float>(val.value);
-                                    }
-                                    default:
-                                    {
-                                        break;
-                                    }
-                                }
+                                res.value = std::any_cast<float>(res.value) + std::any_cast<float>(val.value);
                             }
                             push_list(stack, {res});
                             break;
                         }
-                        
+
+                        case OperatorEnum::SUBTRACTION:
+                        {
+                            res = get_tag(stack, values.front());
+                            check_exception((!is_value(res)), get_token_string(res) + " : Expected a numeric value.");
+
+                            for (int v = 1; v < values.size(); v++)
+                            {
+                                Token val = get_tag(stack, values[v]);
+
+                                check_exception(val.type != DATA_Number, get_token_string(val) + " : Expected a numeric value.");
+                                res.value = std::any_cast<float>(res.value) - std::any_cast<float>(val.value);
+                            }
+                            push_list(stack, {res});
+                            break;
+                        }
+
+                        case OperatorEnum::MULTIPLICATION:
+                        {
+                            res = get_tag(stack, values.front());
+                            check_exception((!is_value(res)), get_token_string(res) + " : Expected a numeric value.");
+
+                            for (int v = 1; v < values.size(); v++)
+                            {
+                                Token val = get_tag(stack, values[v]);
+
+                                check_exception(val.type != DATA_Number, get_token_string(val) + " : Expected a numeric value.");
+                                res.value = std::any_cast<float>(res.value) * std::any_cast<float>(val.value);
+                            }
+                            push_list(stack, {res});
+                            break;
+                        }
+
+                        case OperatorEnum::DIVISION:
+                        {
+                            res = get_tag(stack, values.front());
+                            check_exception((!is_value(res)), get_token_string(res) + " : Expected a numeric value.");
+
+                            for (int v = 1; v < values.size(); v++)
+                            {
+                                Token val = get_tag(stack, values[v]);
+
+                                check_exception(val.type != DATA_Number, get_token_string(val) + " : Expected a numeric value.");
+                                res.value = std::any_cast<float>(res.value) / std::any_cast<float>(val.value);
+                            }
+                            push_list(stack, {res});
+                            break;
+                        }
+
+                        case OperatorEnum::INCREMENT:
+                        {
+                            check_exception(!is_tag(values.front()), get_token_string(res) + " : Expected a tag.");
+                            res = get_tag(stack, values.front());
+                            check_exception((!is_value(res)), get_token_string(res) + " : Tag does not lead to a numeric value.");
+
+                            res.value = std::any_cast<float>(res.value) + 1;
+
+                            stack.at(find_tag(stack, values.front())) = res;
+                            break;
+                        }
+
+                        case OperatorEnum::DECREMENT:
+                        {
+                            res = get_tag(stack, values.front());
+                            check_exception((!is_value(res)), get_token_string(res) + " : Expected a numeric value.");
+
+                            res.value = std::any_cast<float>(res.value) - 1;
+                            push_list(stack, {res});
+                            break;
+                        }
+
                         case OperatorEnum::EQUAL:
                         case OperatorEnum::NOT_EQUAL:
                         case OperatorEnum::GREATER_THAN:
@@ -314,25 +373,6 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         case OperatorEnum::LESS_THAN:
                         case OperatorEnum::LESS_THAN_EQUAL:
                         {
-                            auto greater = [](const Token &a, const Token &b)
-                            {
-                                check_exception(a.type != b.type, "Mismatched Types");
-
-                                switch (a.type)
-                                {
-                                    case TokenType::DATA_Bool:
-                                        return std::any_cast<bool>(a.value) > std::any_cast<bool>(b.value);
-                                    case TokenType::DATA_Char:
-                                        return std::any_cast<char>(a.value) > std::any_cast<char>(b.value);
-                                    case TokenType::DATA_String:
-                                        return std::any_cast<std::string>(a.value) > std::any_cast<std::string>(b.value);
-                                    case TokenType::DATA_Number:
-                                        return std::any_cast<float>(a.value) > std::any_cast<float>(b.value);
-                                    default:
-                                        return false;
-                                }
-                            };
-
                             res = get_tag(stack, values[0]);
 
                             check_exception(is_tag(res), get_token_string(res) + ": Tag not found.");
@@ -449,7 +489,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
     
                             if (!val.empty())
                             {
-                                t.type = (val.front() >= '0' && val.front() <= '9') ? TokenType::DATA_Number : TokenType::NULL_TOKEN;
+                                t.type = is_num(val) ? TokenType::DATA_Number : TokenType::NULL_TOKEN;
                                 t.type = (t.type == TokenType::NULL_TOKEN && (val == "true" || val == "false")) ? TokenType::DATA_Bool : t.type;
                                 t.type = (t.type == TokenType::NULL_TOKEN) ? TokenType::DATA_String : t.type;
 
@@ -972,7 +1012,8 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         case CommandEnum::DUP_X:
                         {
                             std::vector<Token> list = pop_list(stack);
-                            Token count = list.size() == 1 ? list.back() : (Token){.type = TokenType::NULL_TOKEN};
+                            check_exception(list.size() != 1, "Expected a single integer value");
+                            Token count = list.back();
 
                             check_exception(count.type != TokenType::DATA_Number, get_token_string(count) + ": Expected one integer value.");
 
@@ -1064,7 +1105,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                             {
                                 Token t = get_tag(stack, list.back());
                                 check_exception(is_tag(t),"Cannot concatonate tags.");
-                                res.value = std::any_cast<std::string>(res.value) + get_token_string(t);
+                                res.value = get_token_string(res) + get_token_string(t);
                                 list.pop_back();
                             }
 

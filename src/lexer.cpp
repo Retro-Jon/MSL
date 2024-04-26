@@ -93,22 +93,13 @@ bool lex(Node* nodes)
                 }
 
             } else {
-                if (isdigit(val.front()) || (val.front() == '-' && val.length() > 1))
+                if ((val != "--" && val != "++") && (isdigit(val.front()) || (val.front() == '-') && val.length() > 1))
                 {
-                    bool not_num = false;
-                    for (char c : val)
+                    if (is_num(val))
                     {
-                        not_num = (!isdigit(c) && c != '.' && c != '-');
-
-                        if (not_num)
-                            break;
-                    }
-
-                    pointer->t.type = not_num ? TokenType::DATA_Number : pointer->t.type;
-                    if (not_num == false)
                         pointer->t.type = TokenType::DATA_Number;
-
-                    pointer->t.value = std::any_cast<float>(std::stof(val));
+                        pointer->t.value = std::any_cast<float>(std::stof(val));
+                    }
                 }
 
                 if (pointer->t.type != TokenType::NULL_TOKEN)
