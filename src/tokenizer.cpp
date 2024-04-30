@@ -28,6 +28,15 @@ Node* tokenize(const std::string &executable_path, const std::string &program_pa
 
     int file = std::find(included_files.begin(), included_files.end(), file_name) - included_files.begin();
 
+    {
+        pointer->default_next = new Node();
+        pointer = pointer->default_next;
+        pointer->line = 1;
+        pointer->t.type = TokenType::ROOT;
+        pointer->t.value = TokenTypeString[TokenType::ROOT];
+        pointer->file_source = file;
+    }
+
     for (char c : code_string)
     {
         line_count += (c == '\n') ? 1 : 0;
@@ -76,8 +85,7 @@ Node* tokenize(const std::string &executable_path, const std::string &program_pa
                     file_path = program_path + directive_arg;
                 
                 std::string file_content = load_file(file_path);
-                Node* new_nodes = tokenize(executable_path, program_path, file_content, file_path);
-                pointer->default_next = new_nodes;
+                pointer->default_next = tokenize(executable_path, program_path, file_content, file_path);
 
                 while (pointer->default_next != nullptr)
                     pointer = pointer->default_next;
@@ -99,12 +107,11 @@ Node* tokenize(const std::string &executable_path, const std::string &program_pa
             {
                 if (current != "")
                 {
-                    Node* n_node = new Node();
-                    n_node->line = c == '\n' ? line_count - 1 : line_count;
-                    n_node->t.value = current;
-                    n_node->file_source = file;
-                    pointer->default_next = n_node;
+                    pointer->default_next = new Node();
                     pointer = pointer->default_next;
+                    pointer->line = (c == '\n') ? line_count - 1 : line_count;
+                    pointer->t.value = current;
+                    pointer->file_source = file;
                 }
                 current = c;
             }
@@ -112,12 +119,11 @@ Node* tokenize(const std::string &executable_path, const std::string &program_pa
             if (current == "")
                 continue;
 
-            Node* n_node = new Node();
-            n_node->line = c == '\n' ? line_count - 1 : line_count;
-            n_node->t.value = current;
-            n_node->file_source = file;
-            pointer->default_next = n_node;
+            pointer->default_next = new Node();
             pointer = pointer->default_next;
+            pointer->line = (c == '\n') ? line_count - 1 : line_count;
+            pointer->t.value = current;
+            pointer->file_source = file;
             current.clear();
         }
     }
@@ -131,6 +137,8 @@ Node* tokenize(const std::string &executable_path, const std::string &program_pa
         Node* n_node = new Node();
         pointer = n_node;
         pointer->t.value = current;
+        pointer->line = line_count;
+        pointer->file_source = file;
     }
 
     return list;

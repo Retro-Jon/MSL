@@ -28,6 +28,7 @@ enum TokenType
     CONDITION_BLOCK,
     LOOP_BLOCK,
     BLOCK,
+    ROOT
 };
 
 enum CommandEnum
@@ -129,7 +130,8 @@ const std::string TokenTypeString[] = {
     "LOOP_BLOCK",
     "BLOCK",
     "COMMAND",
-    "OPERATOR"
+    "OPERATOR",
+    "ROOT",
 };
 
 struct Function
@@ -148,6 +150,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
 std::string load_file(const std::string &path);
 void delete_nodes(Node* pointer);
+void delete_sub_list(Node* start, Node* end);
 CommandEnum get_command_enum(const std::string &val);
 std::string get_token_string(const Token &t = {.type = TokenType::NULL_TOKEN});
 OperatorEnum get_operator_enum(const std::string &val);

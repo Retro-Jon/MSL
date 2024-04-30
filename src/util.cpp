@@ -29,12 +29,18 @@ std::string load_file(const std::string &path)
 
 void delete_nodes(Node* pointer)
 {
-    if (pointer == nullptr)
-        return;
-    
-    delete_nodes(pointer->default_next);
-    delete pointer;
-    pointer = nullptr;
+    for (Node* current = pointer; current != nullptr; current = current->default_next)
+        delete current;
+}
+
+void delete_sub_list(Node* start, Node* end)
+{
+    Node* last = end->default_next;
+
+    for (Node* current = start->default_next; current != nullptr && current != end->default_next; current = current->default_next)
+        delete current;
+
+    start->default_next = last;
 }
 
 bool is_num(const std::string &val)
@@ -300,6 +306,10 @@ std::string get_token_string(const Token &t)
 {
     switch (t.type)
     {
+        case TokenType::ROOT:
+            return "ROOT";
+            break;
+
         case TokenType::NULL_TOKEN:
             return "NULL_TOKEN";
             break;

@@ -5,9 +5,9 @@ BUILD_WIN = build/msol.exe
 
 debug:
 ifeq ($(OS),Windows_NT)
-	$(CC) -D WINDOWS -D DEBUG $(SRC) -o $(BUILD_WIN) -fsanitize=address -g -O0
+	$(CC) -D WINDOWS -D DEBUG $(SRC) -o $(BUILD_WIN) -fsanitize=leak -g -O0
 else
-	$(CC) -D LINUX -D DEBUG $(SRC) -o $(BUILD_LINUX) -fsanitize=address -g -O0
+	$(CC) -D LINUX -D DEBUG $(SRC) -o $(BUILD_LINUX) -fsanitize=leak -g -O0
 endif
 
 performance:

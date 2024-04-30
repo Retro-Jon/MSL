@@ -1150,6 +1150,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
         catch (InterpreterException &e)
         {
             exception_message = e.what();
+
             if (current->default_next != nullptr && current->default_next->t.type == TokenType::COMMAND && get_command_enum(get_token_string(current->default_next->t)) == CommandEnum::ERROR_HANDLER)
             {
                 current = current->default_next;

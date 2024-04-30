@@ -4,10 +4,13 @@
 
 bool lex(Node* nodes)
 {
-    Node* pointer = nodes;
-    
-    while (pointer != nullptr)
+    Node* pointer; 
+
+    for (pointer = nodes; pointer != nullptr; pointer = pointer->default_next)
     {
+        if (pointer->t.type == TokenType::ROOT)
+            continue;
+
         std::string val = std::any_cast<std::string>(pointer->t.value);
 
         switch (val.front())
@@ -134,8 +137,6 @@ bool lex(Node* nodes)
                 }
             }
         }
-
-        pointer = pointer->default_next;
     }
 
     pointer = nodes;

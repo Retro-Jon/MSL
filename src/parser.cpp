@@ -1,15 +1,19 @@
 #include "lang.hpp"
 #include <vector>
+#include <map>
 
 bool parse(Node* nodes)
 {
+    std::map<std::string, int> function_counter;
+    std::map<std::string, Node*> function_pointers;
     std::vector<Node*> node_stack;
-    Node* current = nodes;
+    Node* current = nullptr;
     Node* previous = nullptr;
 
     bool in_list = false;
-
-    while (current != nullptr)
+    int count = 0;
+ 
+    for (current = nodes; current != nullptr; previous = current, current = current->default_next, count++)
     {
         std::string val = get_token_string(current->t);
 
@@ -37,12 +41,10 @@ bool parse(Node* nodes)
                 }
 
                 previous->default_next = current->default_next;
-                current->default_next = nullptr;
-                delete_nodes(current);
-                current = previous->default_next;
+                delete current;
+                current = previous;
                 node_stack.pop_back();
                 in_list = false;
-                continue;
                 break;
             }
 
@@ -55,12 +57,10 @@ bool parse(Node* nodes)
                 }
 
                 previous->default_next = current->default_next;
-                current->default_next = nullptr;
-                delete_nodes(current);
-                current = previous->default_next;
+                delete current;
+                current = previous;
                 node_stack.pop_back();
                 in_list = false;
-                continue;
                 break;
             }
 
@@ -161,14 +161,24 @@ bool parse(Node* nodes)
                     error_msg(current, "Operators cannot be placed in lists.\nClose the leading list before using operators.");
                     return false;
                 }
+                break;
+            }
+
+            case TokenType::USER_FUNCTION:
+            {
+                if (function_counter.count(get_token_string(current->t)) == 0)
+                {
+                    function_counter.insert(std::pair<std::string, int>(get_token_string(current->t), 0));
+                    function_pointers.insert(std::pair<std::string, Node*>(get_token_string(current->t), current));
+                } else {
+                    function_counter[get_token_string(current->t)] += 1;
+                }
+                break;
             }
 
             default:
                 break;
         }
-
-        previous = current;
-        current = current->default_next;
     }
 
     if (!node_stack.empty())
@@ -181,5 +191,76 @@ bool parse(Node* nodes)
             error_msg(node_stack.back(), "Unclosed sub list.");
         return false;
     }
+
+    for (std::pair<std::string, int> p : function_counter)
+    {
+        if (p.second > 0)
+            continue;
+
+        Node* start = function_pointers[p.first];
+        Node* end = start;
+        
+        while (end != nullptr && get_command_enum(get_token_string(end->t).c_str()) != CommandEnum::END)
+        {
+            if (end->alt_next != nullptr)
+                end = end->alt_next;
+            else
+                end = end->default_next;
+        }
+
+        delete_sub_list(start, end);
+    }
+    
+    current = nodes;
+
+    // Delete redundant cache command / token pairs
+    while (current != nullptr)
+    {
+        Node* start = current->default_next;
+
+        if (start == nullptr)
+            break;
+
+        if (get_command_enum(get_token_string(start->t).c_str()) == CommandEnum::CACHE)
+        {
+            Node* end = start->default_next;
+
+            if (end == nullptr)
+                break;
+            
+            current = end;
+
+            if (end->default_next == nullptr)
+                break;
+
+            if (get_command_enum(get_token_string(end->default_next->t).c_str()) == CommandEnum::CACHE)
+                delete_sub_list(start, end);
+
+            continue;
+        }
+
+        current = current->default_next;
+    }
+
+    current = nodes;
+
+    // Delete duplicate cache commands
+    while (current != nullptr)
+    {
+        if (get_command_enum(get_token_string(current->t).c_str()) == CommandEnum::CACHE)
+        {
+            if (get_command_enum(get_token_string(current->default_next->t).c_str()) == CommandEnum::CACHE)
+            {
+                Node* temp = current->default_next;
+                Node* next = temp->default_next;
+                delete temp;
+                current->default_next = next;
+                continue;
+            }
+        }
+
+        current = current->default_next;
+    }
+
     return true;
 }
