@@ -4,6 +4,10 @@
 #include <vector>
 #define VERSION "2024.4.4"
 #define EXTENSION ".msol"
+#ifdef DEBUG
+#include <iostream>
+#include <chrono>
+#endif
 
 enum TokenType
 {
@@ -109,31 +113,6 @@ struct Node
     Node* alt_next = nullptr;
 };
 
-const std::string TokenTypeString[] = {
-    "NULL_TOKEN",
-    "DATA_String",
-    "DATA_Char",
-    "DATA_Number",
-    "DATA_Bool",
-    "TAG_GLOBAL",
-    "TAG_LOCAL",
-    "TAG_BLOCK",
-    "TAG_MEMBER",
-    "LIST_START",
-    "LIST_END",
-    "SUB_LIST_START",
-    "SUB_LIST_END",
-    "FUNCTION_CALL",
-    "USER_FUNCTION",
-    "CONSTANT",
-    "CONDITION_BLOCK",
-    "LOOP_BLOCK",
-    "BLOCK",
-    "COMMAND",
-    "OPERATOR",
-    "ROOT",
-};
-
 struct Function
 {
     Node* location = nullptr;
@@ -142,6 +121,7 @@ struct Function
 };
 
 extern std::vector<std::string> included_files;
+extern const char* TokenTypeString[];
 
 Node* tokenize(const std::string &executable_path, const std::string &program_path, const std::string &code, const std::string &file_name = "user session");
 bool lex(Node* Nodes);
@@ -151,10 +131,11 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 std::string load_file(const std::string &path);
 void delete_nodes(Node* pointer);
 void delete_sub_list(Node* start, Node* end);
-CommandEnum get_command_enum(const std::string &val);
+CommandEnum get_command_enum(const std::string val);
 std::string get_token_string(const Token &t = {.type = TokenType::NULL_TOKEN});
 OperatorEnum get_operator_enum(const std::string &val);
-const char* get_command_string(CommandEnum c);
+std::string get_operator_string(const OperatorEnum &val);
+const char* get_command_string(const CommandEnum &c);
 std::string trim_num_string(const std::string &num);
 bool is_num(const std::string &val);
 

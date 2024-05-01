@@ -19,6 +19,7 @@ int main(int argc, char** argv)
         std::vector<Token> stack;
 
         Node* program = tokenize(executable_path, program_path, code, program_path);
+
         if (lex(program))
             if (parse(program))
                 interpret(executable_path, get_base_path(program_path), program, stack);

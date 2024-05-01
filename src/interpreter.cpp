@@ -4,10 +4,6 @@
 #include <string>
 #include <map>
 
-#ifdef DEBUG
-#include <chrono>
-#endif
-
 void print_list(const std::vector<Token> &list)
 {
     std::cout << "Count " << list.size() << std::endl;
@@ -37,16 +33,11 @@ void print_list(const std::vector<Token> &list)
 
 void reverse_list(std::vector<Token> &list)
 {
-    int e = list.size() - 1;
-    int b = 0;
-
-    while (b < e && e > 0 && b < list.size())
+    for (int b = 0, e = list.size() - 1; b < e && e > 0 && b < list.size(); b++, e--)
     {
         Token a = list[b];
         list[b] = list[e];
         list[e] = a;
-        b++;
-        e--;
     }
 }
 
@@ -59,19 +50,18 @@ std::vector<Token> pop_list(std::vector<Token> &stack)
 {
     std::vector<Token> list;
 
-    while (!stack.empty() && stack.back().type != TokenType::LIST_START && !is_stack_break(stack.back()))
+    for (; !stack.empty(); stack.pop_back())
     {
+        if (stack.back().type == TokenType::LIST_START)
+            break;
+
         list.push_back(stack.back());
-        stack.pop_back();
-    }
 
-    if (!stack.empty())
-    {
         if (is_stack_break(stack.back()))
-            list.push_back(stack.back());
-
-        stack.pop_back();
+            break;
     }
+
+    stack.pop_back();
 
     return list;
 }
@@ -79,22 +69,18 @@ std::vector<Token> pop_list(std::vector<Token> &stack)
 std::vector<Token> top_list(const std::vector<Token> &stack)
 {
     std::vector<Token> list;
-    int i = stack.size() - 1;
 
-    for (; i >= 0; i--)
+    for (int i = stack.size() - 1; i >= 0; i--)
     {
         Token t = stack.at(i);
 
         if (t.type == TokenType::LIST_START)
             break;
         
-        if (is_stack_break(t))
-        {
-            list.push_back(t);
-            break;
-        }
-
         list.push_back(t);
+
+        if (is_stack_break(t))
+            break;
     }
 
     return list;
@@ -102,8 +88,8 @@ std::vector<Token> top_list(const std::vector<Token> &stack)
 
 void append_list(std::vector<Token> &base, const std::vector<Token> &list)
 {
-    for (int i = 0; i < list.size(); i++)
-        base.push_back(list[i]);
+    for (const Token &t : list)
+        base.push_back(t);
 }
 
 void push_list(std::vector<Token> &stack, const std::vector<Token> &list)
@@ -139,19 +125,22 @@ class InterpreterException : public std::exception
         }
 };
 
-inline void check_exception(const bool &condition, const std::string &message)
+ void check_exception(const bool &condition, const std::string &message)
 {
-    condition ? throw InterpreterException(message) : void();
+    if (condition)
+        throw InterpreterException(message);
 }
 
 bool interpret(const std::string &executable_path, const std::string &program_path, Node* program, std::vector<Token> &backup_stack)
 {
+    #ifdef DEBUG
+        const auto start = std::chrono::high_resolution_clock::now();
+    #endif
+
     Node* current = program;
     std::string exception_message = "";
     std::map<std::string, Function> functions;
     std::map<std::string, Token> constants;
-
-    current = program;
 
     std::vector<Token> stack;
 
@@ -160,14 +149,9 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
     append_list(stack, backup_stack);
     Token temp;
 
-#ifdef DEBUG
-    const auto start = std::chrono::high_resolution_clock::now();
-#endif
-
-    while (current != nullptr)
+    bool skip_end = false;
+    for (current = program; current != nullptr; current = !skip_end ? current->default_next : current, skip_end = false)
     {
-        bool skip_end = false;
-
         try {
             switch (current->t.type)
             {
@@ -373,7 +357,7 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                                 Token val = get_tag(stack, values[v]);
 
                                 check_exception(is_tag(val), get_token_string(val) + ": Tag not found.");
-                                check_exception((res.type != val.type && res.type != TokenType::DATA_String), (TokenTypeString[res.type] + " " + TokenTypeString[val.type] + " : Can only compare values of matching types."));
+                                check_exception((res.type != val.type && res.type != TokenType::DATA_String), (std::string(TokenTypeString[res.type]) + " " + TokenTypeString[val.type] + " : Can only compare values of matching types."));
 
                                 switch (op)
                                 {
@@ -1144,14 +1128,13 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                     break;
             }
 
-            current = !skip_end ? current->default_next : current;
         }
         
         catch (InterpreterException &e)
         {
             exception_message = e.what();
 
-            if (current->default_next != nullptr && current->default_next->t.type == TokenType::COMMAND && get_command_enum(get_token_string(current->default_next->t)) == CommandEnum::ERROR_HANDLER)
+            if (current->default_next != nullptr && current->default_next->t.type == TokenType::COMMAND && get_command_enum(get_token_string(current->default_next->t).c_str()) == CommandEnum::ERROR_HANDLER)
             {
                 current = current->default_next;
                 continue;
@@ -1164,14 +1147,6 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
         }
     }
     
-#ifdef DEBUG
-    const auto stop = std::chrono::high_resolution_clock::now();
-    
-    const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-
-    std::cout << "\nExecution time: " << duration.count() << " milliseconds" << std::endl;
-#endif
-
     for (std::pair<std::string, Function> f : functions)
     {
         delete[] f.second.argument_tags;
@@ -1179,6 +1154,14 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
 
     if (exception_message.empty())
         backup_stack = stack;
+
+    #ifdef DEBUG
+        const auto stop = std::chrono::high_resolution_clock::now();
+    
+        const auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+        std::cout << "\n[TIME] Execution: " << (float(duration.count()) / 1000) << " milliseconds" << std::endl;
+    #endif
 
     return true;
 }

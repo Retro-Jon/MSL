@@ -2,6 +2,7 @@
 #include <any>
 #include <iostream>
 #include <fstream>
+#include <map>
 #include <string>
 #include <unistd.h>
 
@@ -60,247 +61,180 @@ bool is_num(const std::string &val)
     return is_num;
 }
 
-CommandEnum get_command_enum(const std::string &val)
+const std::map<const std::string, const CommandEnum> command_enum_map = {
+    {"print", CommandEnum::PRINT},
+    {"println", CommandEnum::PRINTLN},
+    {"input", CommandEnum::INPUT},
+    {"print-stack", CommandEnum::PRINT_STACK},
+    {"drop", CommandEnum::DROP},
+    {"drop-list", CommandEnum::DROP_LIST},
+    {"at", CommandEnum::AT},
+    {"get", CommandEnum::GET},
+    {"get-list", CommandEnum::GET_LIST},
+    {"get-list-values", CommandEnum::GET_LIST_VALUES},
+    {"merge", CommandEnum::MERGE},
+    {"merge-x", CommandEnum::MERGE_X},
+    {"int", CommandEnum::INT},
+    {"if", CommandEnum::IF},
+    {"?", CommandEnum::ERROR_HANDLER},
+    {"begin", CommandEnum::BEGIN},
+    {"loop", CommandEnum::LOOP},
+    {"while", CommandEnum::WHILE},
+    {"for", CommandEnum::FOR},
+    {"defunc", CommandEnum::DEFUNC},
+    {"$", CommandEnum::CACHE},
+    {"return", CommandEnum::RETURN},
+    {"end", CommandEnum::END},
+    {"break", CommandEnum::BREAK},
+    {"continue", CommandEnum::CONTINUE},
+    {"swap", CommandEnum::SWAP},
+    {"swap-list", CommandEnum::SWAP_LIST},
+    {"dup", CommandEnum::DUP},
+    {"dup-x", CommandEnum::DUP_X},
+    {"dup-list", CommandEnum::DUP_LIST},
+    {"define", CommandEnum::DEFINE},
+    {"include", CommandEnum::INCLUDE},
+    {"strlen", CommandEnum::STRLEN},
+    {"len", CommandEnum::LEN},
+    {"cat", CommandEnum::CAT},
+    {"exit", CommandEnum::EXIT}
+};
+
+const std::map<const CommandEnum, const std::string> enum_command_map = {
+    {CommandEnum::PRINT, "print"},
+    {CommandEnum::PRINTLN, "println"},
+    {CommandEnum::INPUT, "input"},
+    {CommandEnum::PRINT_STACK, "print-stack"},
+    {CommandEnum::DROP, "drop"},
+    {CommandEnum::DROP_LIST, "drop-list"},
+    {CommandEnum::AT, "at"},
+    {CommandEnum::GET, "get"},
+    {CommandEnum::GET_LIST, "get-list"},
+    {CommandEnum::GET_LIST_VALUES, "get-list-values"},
+    {CommandEnum::MERGE, "merge"},
+    {CommandEnum::MERGE_X, "merge-x"},
+    {CommandEnum::INT, "int"},
+    {CommandEnum::IF, "if"},
+    {CommandEnum::ERROR_HANDLER, "?"},
+    {CommandEnum::BEGIN, "begin"},
+    {CommandEnum::LOOP, "loop"},
+    {CommandEnum::WHILE, "while"},
+    {CommandEnum::FOR, "for"},
+    {CommandEnum::DEFUNC, "defunc"},
+    {CommandEnum::CACHE, "$"},
+    {CommandEnum::RETURN, "return"},
+    {CommandEnum::END, "end"},
+    {CommandEnum::BREAK, "break"},
+    {CommandEnum::CONTINUE, "continue"},
+    {CommandEnum::SWAP, "swap"},
+    {CommandEnum::SWAP_LIST, "swap-list"},
+    {CommandEnum::DUP, "dup"},
+    {CommandEnum::DUP_X, "dup-x"},
+    {CommandEnum::DUP_LIST, "dup-list"},
+    {CommandEnum::DEFINE, "define"},
+    {CommandEnum::INCLUDE, "include"},
+    {CommandEnum::STRLEN, "strlen"},
+    {CommandEnum::LEN, "len"},
+    {CommandEnum::CAT, "cat"},
+    {CommandEnum::EXIT, "exit"}
+};
+
+CommandEnum get_command_enum(const std::string val)
 {
-    if (val == "print")
-        return CommandEnum::PRINT;
-    if (val == "println")
-        return CommandEnum::PRINTLN;
-    if (val == "input")
-        return CommandEnum::INPUT;
-    if (val == "print-stack")
-        return CommandEnum::PRINT_STACK;
-    if (val == "drop")
-        return CommandEnum::DROP;
-    if (val == "drop-list")
-        return CommandEnum::DROP_LIST;
-    if (val == "at")
-        return CommandEnum::AT;
-    if (val == "get")
-        return CommandEnum::GET;
-    if (val == "get-list")
-        return CommandEnum::GET_LIST;
-    if (val == "get-list-values")
-        return CommandEnum::GET_LIST_VALUES;
-    if (val == "merge")
-        return CommandEnum::MERGE;
-    if (val == "merge-x")
-        return CommandEnum::MERGE_X;
-    if (val == "int")
-        return CommandEnum::INT;
-    if (val == "if")
-        return CommandEnum::IF;
-    if (val == "?")
-        return CommandEnum::ERROR_HANDLER;
-    if (val == "begin")
-        return CommandEnum::BEGIN;
-    if (val == "loop")
-        return CommandEnum::LOOP;
-    if (val == "while")
-        return CommandEnum::WHILE;
-    if (val == "for")
-        return CommandEnum::FOR;
-    if (val == "defunc")
-        return CommandEnum::DEFUNC;
-    if (val == "$")
-        return CommandEnum::CACHE;
-    if (val == "return")
-        return CommandEnum::RETURN;
-    if (val == "end")
-        return CommandEnum::END;
-    if (val == "break")
-        return CommandEnum::BREAK;
-    if (val == "continue")
-        return CommandEnum::CONTINUE;
-    if (val == "swap")
-        return CommandEnum::SWAP;
-    if (val == "swap-list")
-        return CommandEnum::SWAP_LIST;
-    if (val == "dup")
-        return CommandEnum::DUP;
-    if (val == "dup-x")
-        return CommandEnum::DUP_X;
-    if (val == "dup-list")
-        return CommandEnum::DUP_LIST;
-    if (val == "define")
-        return CommandEnum::DEFINE;
-    if (val == "include")
-        return CommandEnum::INCLUDE;
-    if (val == "strlen")
-        return CommandEnum::STRLEN;
-    if (val == "len")
-        return CommandEnum::LEN;
-    if (val == "cat")
-        return CommandEnum::CAT;
-    if (val == "exit")
-        return CommandEnum::EXIT;
+    if (command_enum_map.count(val) > 0)
+        return command_enum_map.at(val);
 
     return CommandEnum::UNKNOWN_COMMAND;
 }
 
-const char* get_command_string(CommandEnum c)
+const char* get_command_string(const CommandEnum &c)
 {
-    switch (c)
-    {
-        case CommandEnum::PRINT:
-            return "print";
-        case CommandEnum::PRINTLN:
-            return "println";
-        case CommandEnum::INPUT:
-            return "input";
-        case CommandEnum::PRINT_STACK:
-            return "print-stack";
-        case CommandEnum::DROP:
-            return "drop";
-        case CommandEnum::DROP_LIST:
-            return "drop-list";
-        case CommandEnum::AT:
-            return "at";
-        case CommandEnum::GET:
-            return "get";
-        case CommandEnum::GET_LIST:
-            return "get-list";
-        case CommandEnum::GET_LIST_VALUES:
-            return "get-list-values";
-        case CommandEnum::MERGE:
-            return "merge";
-        case CommandEnum::MERGE_X:
-            return "merge-x";
-        case CommandEnum::INT:
-            return "int";
-        case CommandEnum::IF:
-            return "if";
-        case CommandEnum::ERROR_HANDLER:
-            return "?";
-        case CommandEnum::BEGIN:
-            return "begin";
-        case CommandEnum::LOOP:
-            return "loop";
-        case CommandEnum::WHILE:
-            return "while";
-        case CommandEnum::FOR:
-            return "for";
-        case CommandEnum::DEFUNC:
-            return "defunc";
-        case CommandEnum::CACHE:
-            return "$";
-        case CommandEnum::RETURN:
-            return "return";
-        case CommandEnum::END:
-            return "end";
-        case CommandEnum::BREAK:
-            return "break";
-        case CommandEnum::CONTINUE:
-            return "continue";
-        case CommandEnum::SWAP:
-            return "swap";
-        case CommandEnum::SWAP_LIST:
-            return "swap-list";
-        case CommandEnum::DUP:
-            return "dup";
-        case CommandEnum::DUP_X:
-            return "dup-x";
-        case CommandEnum::DUP_LIST:
-            return "dup-list";
-        case CommandEnum::DEFINE:
-            return "define";
-        case CommandEnum::INCLUDE:
-            return "include";
-        case CommandEnum::STRLEN:
-            return "strlen";
-        case CommandEnum::LEN:
-            return "len";
-        case CommandEnum::CAT:
-            return "cat";
-        case CommandEnum::EXIT:
-            return "exit";
-        default:
-            return "UNKNOWN_COMMAND";
-    }
+    if (enum_command_map.count(c) > 0)
+        return enum_command_map.at(c).c_str();
+
+    return "UNKNOWN_COMMAND";
 }
+
+const std::map<const std::string, const OperatorEnum> operator_enum_map = {
+    {"+", OperatorEnum::ADDITION},
+    {"-", OperatorEnum::SUBTRACTION},
+    {"*", OperatorEnum::MULTIPLICATION},
+    {"/", OperatorEnum::DIVISION},
+    {"++", OperatorEnum::INCREMENT},
+    {"--", OperatorEnum::DECREMENT},
+    {"%", OperatorEnum::MODULO},
+    {"=", OperatorEnum::ASSIGNMENT},
+    {"~", OperatorEnum::NEGATE},
+    {"and", OperatorEnum::AND},
+    {"or", OperatorEnum::OR},
+    {"==", OperatorEnum::EQUAL},
+    {"!=", OperatorEnum::NOT_EQUAL},
+    {">", OperatorEnum::GREATER_THAN},
+    {">=", OperatorEnum::GREATER_THAN_EQUAL},
+    {"<", OperatorEnum::LESS_THAN},
+    {"<=", OperatorEnum::LESS_THAN_EQUAL}
+};
+
+const std::map<const OperatorEnum, const std::string> enum_operator_map = {
+    {OperatorEnum::ADDITION, "+"},
+    {OperatorEnum::SUBTRACTION, "-"},
+    {OperatorEnum::MULTIPLICATION, "*"},
+    {OperatorEnum::DIVISION, "/"},
+    {OperatorEnum::INCREMENT, "++"},
+    {OperatorEnum::DECREMENT, "--"},
+    {OperatorEnum::MODULO, "%"},
+    {OperatorEnum::ASSIGNMENT, "="},
+    {OperatorEnum::NEGATE, "~"},
+    {OperatorEnum::AND, "and"},
+    {OperatorEnum::OR, "or"},
+    {OperatorEnum::EQUAL, "=="},
+    {OperatorEnum::NOT_EQUAL, "!="},
+    {OperatorEnum::GREATER_THAN, ">"},
+    {OperatorEnum::GREATER_THAN_EQUAL, ">="},
+    {OperatorEnum::LESS_THAN, "<"},
+    {OperatorEnum::LESS_THAN_EQUAL, "<="}
+};
 
 OperatorEnum get_operator_enum(const std::string &val)
 {
-    if (val == "+")
-        return OperatorEnum::ADDITION;
-    if (val == "-")
-        return OperatorEnum::SUBTRACTION;
-    if (val == "*")
-        return OperatorEnum::MULTIPLICATION;
-    if (val == "/")
-        return OperatorEnum::DIVISION;
-    if (val == "++")
-        return OperatorEnum::INCREMENT;
-    if (val == "--")
-        return OperatorEnum::DECREMENT;
-    if (val == "%")
-        return OperatorEnum::MODULO;
-    if (val == "=")
-        return OperatorEnum::ASSIGNMENT;
-    if (val == "~")
-        return OperatorEnum::NEGATE;
-    if (val == "and")
-        return OperatorEnum::AND;
-    if (val == "or")
-        return OperatorEnum::OR;
-    if (val == "==")
-        return OperatorEnum::EQUAL;
-    if (val == "!=")
-        return OperatorEnum::NOT_EQUAL;
-    if (val == ">")
-        return OperatorEnum::GREATER_THAN;
-    if (val == ">=")
-        return OperatorEnum::GREATER_THAN_EQUAL;
-    if (val == "<")
-        return OperatorEnum::LESS_THAN;
-    if (val == "<=")
-        return OperatorEnum::LESS_THAN_EQUAL;
+    if (operator_enum_map.count(val) > 0)
+        return operator_enum_map.at(val);
 
     return OperatorEnum::UNKNOWN_OPERATOR;
 }
 
-const char* get_operator_string(const OperatorEnum &op)
+std::string get_operator_string(const OperatorEnum &val)
 {
-    switch (op)
-    {
-        case OperatorEnum::ADDITION:
-            return "+";
-        case OperatorEnum::SUBTRACTION:
-            return "-";
-        case OperatorEnum::MULTIPLICATION:
-            return "*";
-        case OperatorEnum::DIVISION:
-            return "/";
-        case OperatorEnum::INCREMENT:
-            return "++";
-        case OperatorEnum::DECREMENT:
-            return "--";
-        case OperatorEnum::MODULO:
-            return "%";
-        case OperatorEnum::ASSIGNMENT:
-            return "=";
-        case OperatorEnum::NEGATE:
-            return "~";
-        case OperatorEnum::AND:
-            return "and";
-        case OperatorEnum::OR:
-            return "or";
-        case OperatorEnum::EQUAL:
-            return "==";
-        case OperatorEnum::NOT_EQUAL:
-            return "!=";
-        case OperatorEnum::GREATER_THAN:
-            return ">";
-        case OperatorEnum::GREATER_THAN_EQUAL:
-            return ">=";
-        case OperatorEnum::LESS_THAN:
-            return "<";
-        case OperatorEnum::LESS_THAN_EQUAL:
-            return "<=";
-        default:
-            return "UNKNOWN_OPERATOR";
-    }
+    if (enum_operator_map.count(val) > 0)
+        return enum_operator_map.at(val);
+
+    return "UNKNOWN_OPERATOR";
 }
+
+const char* TokenTypeString[] = {
+    "NULL_TOKEN",
+    "DATA_String",
+    "DATA_Char",
+    "DATA_Number",
+    "DATA_Bool",
+    "TAG_GLOBAL",
+    "TAG_LOCAL",
+    "TAG_BLOCK",
+    "TAG_MEMBER",
+    "LIST_START",
+    "LIST_END",
+    "SUB_LIST_START",
+    "SUB_LIST_END",
+    "FUNCTION_CALL",
+    "USER_FUNCTION",
+    "CONSTANT",
+    "CONDITION_BLOCK",
+    "LOOP_BLOCK",
+    "BLOCK",
+    "COMMAND",
+    "OPERATOR",
+    "ROOT",
+};
 
 std::string get_token_string(const Token &t)
 {
@@ -325,7 +259,7 @@ std::string get_token_string(const Token &t)
             break;
 
         case TokenType::COMMAND:
-            return std::string(get_command_string(std::any_cast<CommandEnum>(t.value)));
+            return get_command_string(std::any_cast<CommandEnum>(t.value));
             break;
 
         case TokenType::OPERATOR:
@@ -414,8 +348,7 @@ int find_tag(const std::vector<Token> &list, const Token &tag)
             {
                 if (list.at(i).type == TokenType::TAG_LOCAL && get_token_string(list.at(i)) == value)
                     pos = i;
-
-                if (list.at(i).type == TokenType::FUNCTION_CALL)
+                else if (list.at(i).type == TokenType::FUNCTION_CALL)
                     return pos;
             }
 

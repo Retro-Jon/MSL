@@ -4,6 +4,10 @@
 
 bool parse(Node* nodes)
 {
+    #ifdef DEBUG
+        const auto start = std::chrono::high_resolution_clock::now();
+    #endif
+
     std::map<std::string, int> function_counter;
     std::map<std::string, Node*> function_pointers;
     std::vector<Node*> node_stack;
@@ -102,7 +106,7 @@ bool parse(Node* nodes)
             case TokenType::DATA_Number:
             case TokenType::CONSTANT:
             {
-                if (!in_list && !(previous->t.type == TokenType::COMMAND && get_command_enum(get_token_string(previous->t)) == CommandEnum::CACHE))
+                if (!in_list && !(previous->t.type == TokenType::COMMAND && get_command_enum(get_token_string(previous->t).c_str()) == CommandEnum::CACHE))
                 {
                     error_msg(current, "Stray value outside of list.");
                     return false;
@@ -261,6 +265,14 @@ bool parse(Node* nodes)
 
         current = current->default_next;
     }
+
+    #ifdef DEBUG
+        const auto stop = std::chrono::high_resolution_clock::now();
+    
+        const auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+        std::cout << "[TIME] Parsing: " << (float(duration.count()) / 1000) << " milliseconds\n" << std::endl;
+    #endif
 
     return true;
 }

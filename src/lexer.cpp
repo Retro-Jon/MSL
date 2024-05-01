@@ -4,6 +4,10 @@
 
 bool lex(Node* nodes)
 {
+    #ifdef DEBUG
+        const auto start = std::chrono::high_resolution_clock::now();
+    #endif
+
     Node* pointer; 
 
     for (pointer = nodes; pointer != nullptr; pointer = pointer->default_next)
@@ -131,7 +135,7 @@ bool lex(Node* nodes)
                         pointer->t.value = c;
                         pointer->t.type = TokenType::COMMAND;
                     } else {
-                        error_msg(pointer, "Unknown command.");
+                        error_msg(pointer, std::string(val + " Unknown command.").c_str());
                         return false;
                     }
                 }
@@ -159,5 +163,13 @@ bool lex(Node* nodes)
         pointer = pointer->default_next;
     }
     
+    #ifdef DEBUG
+        const auto stop = std::chrono::high_resolution_clock::now();
+    
+        const auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+        std::cout << "[TIME] Lexing: " << (float(duration.count()) / 1000) << " milliseconds" << std::endl;
+    #endif
+
     return true;
 }

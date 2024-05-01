@@ -18,17 +18,16 @@ $ (right) [<text.l> <num.l>] defunc
     [<res.l>] get return
 end
 
-$ (get-next-token) [<text.l> <start.l> <delim.l>] defunc
+$ (get-next-token) [<text.l> <index.l> <delim.l>] defunc
     [<result.l> ""]
-    [<index.l>] [<start.l>] get merge
 
     # start at <start.l> - 1, go till <text.l> length, and step by one.
-    [<i.l>] [<start.l> 1] - [<text.l>] get strlen [3] merge-x {1} for
+    [<i.l>] [<index.l> 1] - [<text.l>] get strlen [3] merge-x {1} for
         [<c.b>]
-        [<text.l>] get {<i.l>} at ?
-            [<index.l>] [<i.l>] get =
-            break
-        end
+            [<text.l>] get {<i.l>} at ?
+                [<index.l>] [<i.l>] get =
+                break
+            end
         merge
 
         [<c.b> <delim.l>] == if
@@ -60,8 +59,8 @@ $ (tokenize) [<input.l> <delim.l>] defunc
         [<count.l>] dup-list {1} + =
     end
 
-    [<output.l> ""]
-    [""] [<count.l>] get dup-x drop
+    [<output.l>]
+    [""] [<count.l>] get dup-x
 
     [<i.l> -1] [<count.l> 1] - merge {1} for
         [<output.l>] at {2 <i.l>} + [<current.l> <i.l>] at get =
