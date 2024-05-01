@@ -1,7 +1,7 @@
 CC = g++
 SRC = $(wildcard src/*.cpp)
-BUILD_LINUX = build/msol
-BUILD_WIN = build/msol.exe
+BUILD_LINUX = build/msl
+BUILD_WIN = build/msl.exe
 
 debug:
 ifeq ($(OS),Windows_NT)

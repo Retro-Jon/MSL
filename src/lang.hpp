@@ -2,8 +2,8 @@
 #include <any>
 #include <string>
 #include <vector>
-#define VERSION "2024.4.4"
-#define EXTENSION ".msol"
+#define VERSION "1"
+#define EXTENSION ".msl"
 #ifdef DEBUG
 #include <iostream>
 #include <chrono>

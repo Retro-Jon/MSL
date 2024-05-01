@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv)
 {
-    std::cout << "MSOL\nversion " << VERSION << "\n(year.month.day)\n" << std::endl;
+    std::cout << "MSL\nversion " << VERSION << std::endl;
     std::string executable_path = getexepath();
 
     if (argc == 2)
