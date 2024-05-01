@@ -36,9 +36,14 @@ void delete_nodes(Node* pointer)
 
 void delete_sub_list(Node* start, Node* end)
 {
-    Node* last = end->default_next;
+    Node* last;
+    
+    if (end != nullptr)
+        last = end->default_next;
+    else
+        last = nullptr;
 
-    for (Node* current = start->default_next; current != nullptr && current != end->default_next; current = current->default_next)
+    for (Node* current = start->default_next; current != nullptr && current != last; current = current->default_next)
         delete current;
 
     start->default_next = last;
