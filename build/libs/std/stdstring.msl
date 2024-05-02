@@ -38,6 +38,10 @@ $ (get-next-token) [<text.l> <index.l> <delim.l>] defunc
         [<result.l>] dup-list {<c.b>} cat =
     end
 
+    [<delim.l> ' '] == if
+        [<index.l>] [<index.l> -1] + =
+    end
+
     [<text.m>] [<result.l>] get {<index.m>} [<index.l>] get [3] merge-x return
 end
 
