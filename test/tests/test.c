@@ -2,5 +2,5 @@
 
 void message(void)
 {
-    printf("Hello from external library!");
+    printf("Hello from external library!\n");
 }

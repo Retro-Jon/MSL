@@ -16,6 +16,8 @@ void print_list(const std::vector<Token> &list)
     std::string type;
     int i = 0;
 
+    std::string output = "";
+
     for (; i < list.size(); i++)
     {
         item = get_token_string(list[i]);
@@ -23,13 +25,14 @@ void print_list(const std::vector<Token> &list)
         match = (item == last_item);
 
         if (!match)
-            std::cout << (match ? "...\n" : "") << i << " : " << item << " as " << type << std::endl;
+            output += (match ? "...\n" : "") + std::to_string(i) + " : " + item + " as " + type + "\n";
 
         last_item = item;
         last_type = type;
     }
 
-    std::cout << (match ? ("\n...\n" + std::to_string(i) + " : " + last_item + " as " + last_type) : "") << std::endl;
+    output += (match ? ("\n...\n" + std::to_string(i) + " : " + last_item + " as " + last_type) : "");
+    std::cout << output << std::endl;
 }
 
 void reverse_list(std::vector<Token> &list)
@@ -126,7 +129,7 @@ class InterpreterException : public std::exception
         }
 };
 
- void check_exception(const bool &condition, const std::string &message)
+void check_exception(const bool &condition, const std::string &message)
 {
     if (condition)
         throw InterpreterException(message);
@@ -443,15 +446,17 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                         case CommandEnum::PRINT:
                         {
                             std::vector<Token> list = pop_list(stack);
+                            std::string output = "";
 
                             while (!list.empty())
                             {
                                 Token val = get_tag(stack, list.back());
                                 check_exception(!is_value(val), get_token_string(val) + ": Tag not found.");
-                                std::cout << get_token_string(val) + (command_enum == CommandEnum::PRINTLN ? "\n" : "");
+                                output += get_token_string(val) + (command_enum == CommandEnum::PRINTLN ? "\n" : "");
                                 list.pop_back();
                             }
 
+                            std::cout << output;
                             std::cout.flush();
                             break;
                         }
@@ -1095,7 +1100,6 @@ bool interpret(const std::string &executable_path, const std::string &program_pa
                             std::vector<Token>library = pop_list(stack);
 
                             check_exception(functions.empty(), "No function names provided.");
-                            check_exception(library.empty(), "No library name provided.");
                             check_exception(library.size() != 1, "Expected a single library name.");
 
                             std::string libpath = program_path + get_token_string(library.back());
