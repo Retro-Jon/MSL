@@ -73,6 +73,8 @@ enum CommandEnum
     STRLEN,
     LEN,
     CAT,
+    OPEN_LIB,
+    EXECUTE,
     EXIT
 };
 

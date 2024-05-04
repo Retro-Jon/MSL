@@ -102,6 +102,8 @@ const std::map<const std::string, const CommandEnum> command_enum_map = {
     {"strlen", CommandEnum::STRLEN},
     {"len", CommandEnum::LEN},
     {"cat", CommandEnum::CAT},
+    {"open-lib", CommandEnum::OPEN_LIB},
+    {"execute", CommandEnum::EXECUTE},
     {"exit", CommandEnum::EXIT}
 };
 
@@ -141,6 +143,8 @@ const std::map<const CommandEnum, const std::string> enum_command_map = {
     {CommandEnum::STRLEN, "strlen"},
     {CommandEnum::LEN, "len"},
     {CommandEnum::CAT, "cat"},
+    {CommandEnum::OPEN_LIB, "open-lib"},
+    {CommandEnum::EXECUTE, "execute"},
     {CommandEnum::EXIT, "exit"}
 };
 
