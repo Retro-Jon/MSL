@@ -6,7 +6,7 @@
 #include <string>
 #include <unistd.h>
 
-std::string load_file(const std::string &path)
+std::string load_file(const std::string& path)
 {
     std::string res;
     std::fstream file;
@@ -49,7 +49,7 @@ void delete_sub_list(Node* start, Node* end)
     start->default_next = last;
 }
 
-bool is_num(const std::string &val)
+bool is_num(const std::string& val)
 {
     bool is_num = false;
     if (isdigit(val.front()) || (val.front() == '-' && val.length() > 1))
@@ -148,7 +148,7 @@ const std::map<const CommandEnum, const std::string> enum_command_map = {
     {CommandEnum::EXIT, "exit"}
 };
 
-CommandEnum get_command_enum(const std::string val)
+CommandEnum get_command_enum(const std::string& val)
 {
     if (command_enum_map.count(val) > 0)
         return command_enum_map.at(val);
@@ -156,7 +156,7 @@ CommandEnum get_command_enum(const std::string val)
     return CommandEnum::UNKNOWN_COMMAND;
 }
 
-const char* get_command_string(const CommandEnum &c)
+const char* get_command_string(const CommandEnum& c)
 {
     if (enum_command_map.count(c) > 0)
         return enum_command_map.at(c).c_str();
@@ -204,7 +204,7 @@ const std::map<const OperatorEnum, const std::string> enum_operator_map = {
     {OperatorEnum::LESS_THAN_EQUAL, "<="}
 };
 
-OperatorEnum get_operator_enum(const std::string &val)
+OperatorEnum get_operator_enum(const std::string& val)
 {
     if (operator_enum_map.count(val) > 0)
         return operator_enum_map.at(val);
@@ -212,7 +212,7 @@ OperatorEnum get_operator_enum(const std::string &val)
     return OperatorEnum::UNKNOWN_OPERATOR;
 }
 
-std::string get_operator_string(const OperatorEnum &val)
+std::string get_operator_string(const OperatorEnum& val)
 {
     if (enum_operator_map.count(val) > 0)
         return enum_operator_map.at(val);
@@ -245,7 +245,7 @@ const char* TokenTypeString[] = {
     "ROOT",
 };
 
-std::string get_token_string(const Token &t)
+std::string get_token_string(const Token& t)
 {
     switch (t.type)
     {
@@ -311,7 +311,7 @@ std::string get_token_string(const Token &t)
     return "";
 }
 
-std::string trim_num_string(const std::string &num)
+std::string trim_num_string(const std::string& num)
 {
     std::string res = "";
 
@@ -331,7 +331,7 @@ std::string trim_num_string(const std::string &num)
     return res;
 }
 
-int find_tag(const std::vector<Token> &list, const Token &tag)
+int find_tag(const std::vector<Token>& list, const Token& tag)
 {
     if (list.empty() || !is_tag(tag))
         return -1;
@@ -405,7 +405,7 @@ void error_msg(const Node* node, const char* explanation)
     std::cout << explanation << std::endl;
 }
 
-bool is_valid_extension(const std::string &file, const std::string &extension)
+bool is_valid_extension(const std::string& file, const std::string& extension)
 {
     bool result = false;
 
@@ -415,7 +415,7 @@ bool is_valid_extension(const std::string &file, const std::string &extension)
     return result;
 }
 
-std::string get_base_path(const std::string &file)
+std::string get_base_path(const std::string& file)
 {
     std::string result = file;
     while (!result.empty() && result.back() != '/' && result.back() != '\\')

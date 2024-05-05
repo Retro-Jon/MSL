@@ -5,7 +5,7 @@
 #include <map>
 #include "libloader.hpp"
 
-void print_list(const std::vector<Token> &list)
+void print_list(const std::vector<Token>& list)
 {
     std::cout << "Count " << list.size() << std::endl;
 
@@ -35,7 +35,7 @@ void print_list(const std::vector<Token> &list)
     std::cout << output << std::endl;
 }
 
-void reverse_list(std::vector<Token> &list)
+void reverse_list(std::vector<Token>& list)
 {
     for (int b = 0, e = list.size() - 1; b < e && e > 0 && b < list.size(); b++, e--)
     {
@@ -45,12 +45,12 @@ void reverse_list(std::vector<Token> &list)
     }
 }
 
-inline bool is_stack_break(const Token &tok)
+inline bool is_stack_break(const Token& tok)
 {
     return tok.type >= TokenType::FUNCTION_CALL;
 }
 
-std::vector<Token> pop_list(std::vector<Token> &stack)
+std::vector<Token> pop_list(std::vector<Token>& stack)
 {
     std::vector<Token> list;
 
@@ -70,7 +70,7 @@ std::vector<Token> pop_list(std::vector<Token> &stack)
     return list;
 }
 
-std::vector<Token> top_list(const std::vector<Token> &stack)
+std::vector<Token> top_list(const std::vector<Token>& stack)
 {
     std::vector<Token> list;
 
@@ -90,13 +90,13 @@ std::vector<Token> top_list(const std::vector<Token> &stack)
     return list;
 }
 
-void append_list(std::vector<Token> &base, const std::vector<Token> &list)
+void append_list(std::vector<Token>& base, const std::vector<Token>& list)
 {
     for (const Token &t : list)
         base.push_back(t);
 }
 
-void push_list(std::vector<Token> &stack, const std::vector<Token> &list)
+void push_list(std::vector<Token>& stack, const std::vector<Token>& list)
 {
     if (list.empty() || !is_stack_break(list.back()))
         stack.push_back({.type = TokenType::LIST_START});
@@ -104,38 +104,24 @@ void push_list(std::vector<Token> &stack, const std::vector<Token> &list)
     append_list(stack, list);
 }
 
-void push_list_empty(std::vector<Token> &stack, const std::vector<Token> &list)
+void push_list_empty(std::vector<Token>& stack, const std::vector<Token>& list)
 {
     !list.empty() ? push_list(stack, list) : void();
 }
 
-Token get_tag(const std::vector<Token> &list, const Token &tag)
+Token get_tag(const std::vector<Token>& list, const Token& tag)
 {
     int pos = find_tag(list, tag);
     return (pos >= 0 && pos < list.size() - 1) ? list.at(pos + 1) : tag;
 }
 
-class InterpreterException : public std::exception
-{
-    private:
-        const std::string message;
-
-    public:
-        InterpreterException(const std::string &msg) : message(msg) {}
-
-        const char* what()
-        {
-            return message.c_str();
-        }
-};
-
-void check_exception(const bool &condition, const std::string &message)
+void check_exception(const bool& condition, const std::string& message)
 {
     if (condition)
         throw InterpreterException(message);
 }
 
-bool interpret(const std::string &executable_path, const std::string &program_path, Node* program, std::vector<Token> &backup_stack)
+bool interpret(const std::string& executable_path, const std::string& program_path, Node* program, std::vector<Token>& backup_stack)
 {
     #ifdef DEBUG
         const auto start = std::chrono::high_resolution_clock::now();
