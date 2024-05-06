@@ -240,8 +240,12 @@ bool interpret(const std::string& executable_path, const std::string& program_pa
                             pos = (destination.back().type == TokenType::DATA_Number) ? int(std::any_cast<float>(destination.back().value)) : find_tag(stack, destination.back()) + 1;
 
                             check_exception(pos < 0 || pos >= stack.size(), "Position not on stack");
+
+                            Token value = get_tag(stack, values.front());
+
+                            check_exception(is_tag(value), get_token_string(value) + " Tag not found.");
                     
-                            stack.at(pos) = values.front();
+                            stack.at(pos) = value;
                             break;
                         }
 

@@ -4,26 +4,37 @@
 #include <dlfcn.h>
 #include <map>
 #include <functional>
-#include <algorithm>
 
 static std::map<std::string, std::function<void(void)>> cppfunctions;
-static std::vector<void*> libs;
+static std::map<std::string, void*> libs;
 
 // Close library
 void closelibs()
 {
-    for (; !libs.empty(); dlclose(libs.back()), libs.pop_back());
+    for (std::pair<std::string, void*> kv : libs)
+        dlclose(libs.at(kv.first));
+
+    libs.clear();
 }
 
 // Return library function pointer
 bool bindlibfunc(const char* librarypath, const char* function)
 {
-    void* lib = dlopen(librarypath, RTLD_NOW);
+    void* lib;
 
-    if (lib == NULL)
+    if (libs.count(std::string(librarypath)) == 0)
     {
-        perror("dlopen");
-        return false;
+        lib = dlopen(librarypath, RTLD_NOW);
+
+        if (lib == NULL)
+        {
+            perror("dlopen");
+            return false;
+        }
+
+        libs.insert(std::pair<std::string, void*>(std::string(librarypath), lib));
+    } else {
+        lib = libs.at(std::string(librarypath));
     }
 
     int (*func) (void);
@@ -34,9 +45,6 @@ bool bindlibfunc(const char* librarypath, const char* function)
         dlclose(lib);
         return false;
     }
-
-    if (std::find(libs.begin(), libs.end(), lib) == libs.end())
-        libs.push_back(lib);
 
     if (cppfunctions.count(function) == 0)
         cppfunctions.insert({function, func});
