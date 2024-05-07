@@ -12,15 +12,15 @@ endif
 
 performance:
 ifeq ($(OS),Windows_NT)
-	$(CC) -D WINDOWS -D DEBUG $(SRC) -o $(BUILD_WIN) -Ofast
+	$(CC) -D WINDOWS -D DEBUG $(SRC) -o $(BUILD_WIN) -O3
 else
-	$(CC) -D LINUX -D DEBUG $(SRC) -o $(BUILD_LINUX) -Ofast
+	$(CC) -D LINUX -D DEBUG $(SRC) -o $(BUILD_LINUX) -O3
 endif
 
 release:
 ifeq ($(OS),Windows_NT)
-	$(CC) -D WINDOWS $(SRC) -o $(BUILD_WIN) -Ofast
+	$(CC) -D WINDOWS $(SRC) -o $(BUILD_WIN) -O3
 else
-	$(CC) -D LINUX $(SRC) -o $(BUILD_LINUX) -Ofast
+	$(CC) -D LINUX $(SRC) -o $(BUILD_LINUX) -O3
 endif
 

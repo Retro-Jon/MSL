@@ -24,8 +24,10 @@ void print_list(const std::vector<Token>& list)
         type = TokenTypeString[list[i].type];
         match = (item == last_item);
 
-        if (!match)
-            output += (match ? "...\n" : "") + std::to_string(i) + " : " + item + " as " + type + "\n";
+        if (match)
+            output += "...\n" + std::to_string(i) + " : " + item + " as " + type + "\n";
+        else
+            output += std::to_string(i) + " : " + item + " as " + type + "\n";
 
         last_item = item;
         last_type = type;
@@ -37,7 +39,7 @@ void print_list(const std::vector<Token>& list)
 
 void reverse_list(std::vector<Token>& list)
 {
-    for (int b = 0, e = list.size() - 1; b < e && e > 0 && b < list.size(); b++, e--)
+    for (int b = 0, e = list.size() - 1; b < e; b++, e--)
     {
         Token a = list[b];
         list[b] = list[e];
@@ -45,20 +47,12 @@ void reverse_list(std::vector<Token>& list)
     }
 }
 
-inline bool is_stack_break(const Token& tok)
-{
-    return tok.type >= TokenType::FUNCTION_CALL;
-}
-
 std::vector<Token> pop_list(std::vector<Token>& stack)
 {
     std::vector<Token> list;
 
-    for (; !stack.empty(); stack.pop_back())
+    for (; !stack.empty() && stack.back().type != TokenType::LIST_START; stack.pop_back())
     {
-        if (stack.back().type == TokenType::LIST_START)
-            break;
-
         list.push_back(stack.back());
 
         if (is_stack_break(stack.back()))
@@ -106,13 +100,13 @@ void push_list(std::vector<Token>& stack, const std::vector<Token>& list)
 
 void push_list_empty(std::vector<Token>& stack, const std::vector<Token>& list)
 {
-    !list.empty() ? push_list(stack, list) : void();
+    list.empty() ? void() : push_list(stack, list);
 }
 
 Token get_tag(const std::vector<Token>& list, const Token& tag)
 {
     int pos = find_tag(list, tag);
-    return (pos >= 0 && pos < list.size() - 1) ? list.at(pos + 1) : tag;
+    return (pos < 0 || pos >= list.size()) ? tag : list.at(pos + 1);
 }
 
 void check_exception(const bool& condition, const std::string& message)
@@ -140,7 +134,7 @@ bool interpret(const std::string& executable_path, const std::string& program_pa
     Token temp;
 
     bool skip_end = false;
-    for (current = program; current != nullptr; current = !skip_end ? current->default_next : current, skip_end = false)
+    for (current = program; current != nullptr; current = (!skip_end) ? current->default_next : current, skip_end = false)
     {
         try {
             switch (current->t.type)
@@ -433,22 +427,41 @@ bool interpret(const std::string& executable_path, const std::string& program_pa
                     switch (command_enum)
                     {
                         case CommandEnum::PRINTLN:
-                        case CommandEnum::PRINT:
                         {
                             std::vector<Token> list = pop_list(stack);
                             std::string output = "";
 
-                            while (!list.empty())
+                            for (int i = list.size() - 1; i >= 0; i--)
                             {
-                                Token val = get_tag(stack, list.back());
+                                Token val = get_tag(stack, list.at(i));
+
                                 check_exception(!is_value(val), get_token_string(val) + ": Tag not found.");
-                                output += get_token_string(val) + (command_enum == CommandEnum::PRINTLN ? "\n" : "");
-                                list.pop_back();
+                                output += get_token_string(val) + "\n";
                             }
 
                             std::cout << output;
                             std::cout.flush();
                             break;
+
+                        }
+
+                        case CommandEnum::PRINT:
+                        {
+                            std::vector<Token> list = pop_list(stack);
+                            std::string output = "";
+
+                            for (int i = list.size() - 1; i >= 0; i--)
+                            {
+                                Token val = get_tag(stack, list.at(i));
+
+                                check_exception(!is_value(val), get_token_string(val) + ": Tag not found.");
+                                output += get_token_string(val);
+                            }
+
+                            std::cout << output;
+                            std::cout.flush();
+                            break;
+
                         }
 
                         case CommandEnum::INPUT:
@@ -1075,7 +1088,7 @@ bool interpret(const std::string& executable_path, const std::string& program_pa
                             while (!list.empty())
                             {
                                 Token t = get_tag(stack, list.back());
-                                check_exception(is_tag(t),"Cannot concatonate tags.");
+                                check_exception(is_tag(t), get_token_string(t) + ": Cannot concatonate tags.");
                                 res.value = get_token_string(res) + get_token_string(t);
                                 list.pop_back();
                             }

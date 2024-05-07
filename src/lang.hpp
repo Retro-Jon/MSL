@@ -149,12 +149,17 @@ std::string get_base_path(const std::string& file);
 
 inline bool is_tag(const Token& t)
 {
-    return (t.type >= TokenType::TAG_GLOBAL && t.type <= TokenType::TAG_MEMBER);
+    return !(t.type < TokenType::TAG_GLOBAL || t.type > TokenType::TAG_MEMBER);
 }
 
 inline bool is_value(const Token& t)
 {
-    return (t.type >= TokenType::DATA_String && t.type <= TokenType::DATA_Bool);
+    return !(t.type < TokenType::DATA_String || t.type > TokenType::DATA_Bool);
+}
+
+inline bool is_stack_break(const Token& tok)
+{
+    return tok.type >= TokenType::FUNCTION_CALL;
 }
 
 class InterpreterException : public std::exception
