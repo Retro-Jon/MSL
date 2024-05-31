@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <algorithm>
 #include "libloader.hpp"
 
 void print_list(const std::vector<Token>& list)
@@ -11,6 +12,7 @@ void print_list(const std::vector<Token>& list)
 
     std::string last_item = "";
     std::string last_type = "";
+    bool last_match = false;
     bool match = false;
     std::string item;
     std::string type;
@@ -24,13 +26,14 @@ void print_list(const std::vector<Token>& list)
         type = TokenTypeString[list[i].type];
         match = (item == last_item);
 
-        if (match)
-            output += "...\n" + std::to_string(i) + " : " + item + " as " + type + "\n";
-        else
+        if (match && !last_match)
+            output += "...\n";
+        else if (!match && !last_match)
             output += std::to_string(i) + " : " + item + " as " + type + "\n";
 
         last_item = item;
         last_type = type;
+        last_match = match;
     }
 
     output += (match ? ("\n...\n" + std::to_string(i) + " : " + last_item + " as " + last_type) : "");
@@ -51,15 +54,25 @@ std::vector<Token> pop_list(std::vector<Token>& stack)
 {
     std::vector<Token> list;
 
-    for (; !stack.empty() && stack.back().type != TokenType::LIST_START; stack.pop_back())
+    auto is_start = [](Token t)
+    {
+        return t.type == TokenType::LIST_START;
+    };
+
+    auto it = std::find_if(stack.rbegin(), stack.rend(), is_start);
+    int pos = it != stack.rend() ? (it - stack.rbegin()) : 0;
+
+    for (int i = 0; i < pos; i++)
     {
         list.push_back(stack.back());
+        stack.pop_back();
 
-        if (is_stack_break(stack.back()))
+        if (is_stack_break(list.back()))
             break;
     }
 
-    stack.pop_back();
+    if (!stack.empty() && is_start(stack.back()))
+        stack.pop_back();
 
     return list;
 }
@@ -572,7 +585,7 @@ bool interpret(const std::string& executable_path, const std::string& program_pa
                             if (is_tag(tok))
                             {
                                 Token val = get_tag(stack, tok);
-                                check_exception(!is_value(val), "Provided index does not exist on the stack.");
+                                check_exception(!is_value(val), get_token_string(val) + " Provided tag does not exist on the stack.");
                                 
                                 push_list(stack, {val});
                                 break;

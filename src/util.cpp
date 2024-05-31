@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <unistd.h>
+#include <algorithm>
 
 std::string load_file(const std::string& path)
 {
@@ -308,54 +309,80 @@ int find_tag(const std::vector<Token>& list, const Token& tag)
     std::string value = get_token_string(tag);
     int pos = -1;
 
+    auto does_match = [&tag, &value](const Token& comp)
+    {
+        if (comp.type == tag.type && value == get_token_string(comp))
+                return true;
+
+        return false;
+    };
+
     switch (tag.type)
     {
         case TokenType::TAG_GLOBAL:
         {
-            for (int i = 0; i < list.size(); i++)
-            {
-                if (list.at(i).type == tag.type && get_token_string(list.at(i)) == value)
-                    return i;
-            }
+            auto it = std::find_if(list.rbegin(), list.rend(), does_match);
+            return it != list.rend() ? list.size() - (it - list.rbegin()) - 1 : 0;
+
             break;
         }
     
         case TokenType::TAG_LOCAL:
         {
-            for (int i = list.size() - 1; i >= 0; i--)
-            {
-                if (list.at(i).type == TokenType::FUNCTION_CALL)
-                    return pos;
+            auto it = std::find_if(list.rbegin(), list.rend(),
+                    [&tag, &value](const Token& comp)
+                    {
+                        return comp.type == TokenType::FUNCTION_CALL;
+                    });
 
-                if (list.at(i).type == TokenType::TAG_LOCAL && get_token_string(list.at(i)) == value)
-                    pos = i;
+            int pos = list.size() - (it != list.rend() ? (it - list.rbegin()) : 0);
+
+            for (int i = pos; i < list.size(); i++)
+            {
+                if (does_match(list.at(i)))
+                    return i;
             }
+
             break;
         }
 
         case TokenType::TAG_BLOCK:
         {
-            for (int i = list.size() - 1; i >= 0; i--)
+            auto it = std::find_if(list.rbegin(), list.rend(),
+                    [&tag, &value](const Token& comp)
+                    {
+                        return is_stack_break(comp);
+                    });
+
+            int pos = list.size() - (it != list.rend() ? (it - list.rbegin()) : 0);
+
+            for (int i = pos; i < list.size(); i++)
             {
-                if (is_stack_break(list.at(i)))
-                    return pos;
-                
-                if (list.at(i).type == TokenType::TAG_BLOCK && get_token_string(list.at(i)) == value)
-                    pos = i;
+                if (does_match(list.at(i)))
+                    return i;
             }
+
             break;
         }
     
         case TokenType::TAG_MEMBER:
         {
-            for (int i = list.size() - 1; i >= 0; i--)
-            {
-                if (list.at(i).type == TokenType::LIST_START)
-                    return -1;
+            auto it = std::find_if(list.rbegin(), list.rend(),
+                    [&tag, &value](const Token& comp)
+                    {
+                        return comp.type == TokenType::LIST_START;
+                    });
 
-                if (list.at(i).type == TokenType::TAG_MEMBER && get_token_string(list.at(i)) == value)
+            int pos = list.size() - (it != list.rend() ? (it - list.rbegin()) : 0);
+
+            for (int i = pos; i < list.size(); i++)
+            {
+                if (does_match(list.at(i)))
                     return i;
             }
+
+            return -1;
+
             break;
         }
 
