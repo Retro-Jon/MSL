@@ -4,7 +4,6 @@
 #include <string>
 #include <map>
 #include <algorithm>
-#include "libloader.hpp"
 
 void print_list(const std::vector<Token>& list)
 {
@@ -1110,35 +1109,6 @@ bool interpret(const std::string& executable_path, const std::string& program_pa
                             break;
                         }
 
-                        case CommandEnum::OPEN_LIB:
-                        {
-                            std::vector<Token>functions = pop_list(stack);
-                            std::vector<Token>library = pop_list(stack);
-
-                            check_exception(functions.empty(), "No function names provided.");
-                            check_exception(library.size() != 1, "Expected a single library name.");
-
-                            std::string libpath = program_path + get_token_string(library.back());
-
-                            for (; !functions.empty(); functions.pop_back())
-                                bindlibfunc(libpath.c_str(), get_token_string(functions.back()).c_str());
-
-                            break;
-                        }
-
-                        case CommandEnum::EXECUTE:
-                        {
-                            std::vector<Token> list = pop_list(stack);
-                            reverse_list(list);
-
-                            for (Token function : list)
-                            {
-                                check_exception(function.type != TokenType::DATA_String, "Expected a library function name.");
-                                check_exception(!execute(get_token_string(function).c_str()), "Function not found.");
-                            }
-                            break;
-                        }
-
                         case CommandEnum::EXIT:
                         {
                             current = nullptr;
@@ -1198,8 +1168,6 @@ bool interpret(const std::string& executable_path, const std::string& program_pa
         }
     }
 
-    closelibs();
-    
     for (std::pair<std::string, Function> f : functions)
     {
         delete[] f.second.argument_tags;
