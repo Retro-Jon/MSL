@@ -5,8 +5,9 @@
 #include <map>
 #include <string>
 #include <unistd.h>
+#include <algorithm>
 
-std::string load_file(const std::string &path)
+std::string load_file(const std::string& path)
 {
     std::string res;
     std::fstream file;
@@ -49,7 +50,7 @@ void delete_sub_list(Node* start, Node* end)
     start->default_next = last;
 }
 
-bool is_num(const std::string &val)
+bool is_num(const std::string& val)
 {
     bool is_num = false;
     if (isdigit(val.front()) || (val.front() == '-' && val.length() > 1))
@@ -102,6 +103,8 @@ const std::map<const std::string, const CommandEnum> command_enum_map = {
     {"strlen", CommandEnum::STRLEN},
     {"len", CommandEnum::LEN},
     {"cat", CommandEnum::CAT},
+    {"open-lib", CommandEnum::OPEN_LIB},
+    {"execute", CommandEnum::EXECUTE},
     {"exit", CommandEnum::EXIT}
 };
 
@@ -141,10 +144,12 @@ const std::map<const CommandEnum, const std::string> enum_command_map = {
     {CommandEnum::STRLEN, "strlen"},
     {CommandEnum::LEN, "len"},
     {CommandEnum::CAT, "cat"},
+    {CommandEnum::OPEN_LIB, "open-lib"},
+    {CommandEnum::EXECUTE, "execute"},
     {CommandEnum::EXIT, "exit"}
 };
 
-CommandEnum get_command_enum(const std::string val)
+CommandEnum get_command_enum(const std::string& val)
 {
     if (command_enum_map.count(val) > 0)
         return command_enum_map.at(val);
@@ -152,7 +157,7 @@ CommandEnum get_command_enum(const std::string val)
     return CommandEnum::UNKNOWN_COMMAND;
 }
 
-const char* get_command_string(const CommandEnum &c)
+const char* get_command_string(const CommandEnum& c)
 {
     if (enum_command_map.count(c) > 0)
         return enum_command_map.at(c).c_str();
@@ -200,20 +205,14 @@ const std::map<const OperatorEnum, const std::string> enum_operator_map = {
     {OperatorEnum::LESS_THAN_EQUAL, "<="}
 };
 
-OperatorEnum get_operator_enum(const std::string &val)
+OperatorEnum get_operator_enum(const std::string& val)
 {
-    if (operator_enum_map.count(val) > 0)
-        return operator_enum_map.at(val);
-
-    return OperatorEnum::UNKNOWN_OPERATOR;
+    return (operator_enum_map.count(val) > 0) ? operator_enum_map.at(val) : OperatorEnum::UNKNOWN_OPERATOR;
 }
 
-std::string get_operator_string(const OperatorEnum &val)
+std::string get_operator_string(const OperatorEnum& val)
 {
-    if (enum_operator_map.count(val) > 0)
-        return enum_operator_map.at(val);
-
-    return "UNKNOWN_OPERATOR";
+    return (enum_operator_map.count(val) > 0) ? enum_operator_map.at(val) : "UNKNOWN_OPERATOR";
 }
 
 const char* TokenTypeString[] = {
@@ -230,29 +229,21 @@ const char* TokenTypeString[] = {
     "LIST_END",
     "SUB_LIST_START",
     "SUB_LIST_END",
-    "FUNCTION_CALL",
     "USER_FUNCTION",
     "CONSTANT",
+    "COMMAND",
+    "OPERATOR",
+    "FUNCTION_CALL",
     "CONDITION_BLOCK",
     "LOOP_BLOCK",
     "BLOCK",
-    "COMMAND",
-    "OPERATOR",
-    "ROOT",
+    "ROOT"
 };
 
-std::string get_token_string(const Token &t)
+std::string get_token_string(const Token& t)
 {
     switch (t.type)
     {
-        case TokenType::ROOT:
-            return "ROOT";
-            break;
-
-        case TokenType::NULL_TOKEN:
-            return "NULL_TOKEN";
-            break;
-        
         case TokenType::TAG_GLOBAL:
         case TokenType::TAG_LOCAL:
         case TokenType::TAG_BLOCK:
@@ -264,11 +255,11 @@ std::string get_token_string(const Token &t)
             break;
 
         case TokenType::COMMAND:
-            return get_command_string(std::any_cast<CommandEnum>(t.value));
+            return enum_command_map.at(std::any_cast<CommandEnum>(t.value));
             break;
 
         case TokenType::OPERATOR:
-            return std::string(get_operator_string(std::any_cast<OperatorEnum>(t.value)));
+            return get_operator_string(std::any_cast<OperatorEnum>(t.value));
             break;
 
         case TokenType::DATA_Char:
@@ -282,22 +273,6 @@ std::string get_token_string(const Token &t)
         case TokenType::DATA_Bool:
             return (std::any_cast<bool>(t.value) == true) ? "true" : "false";
             break;
-        
-        case TokenType::LIST_START:
-            return "LIST_START";
-            break;
-        
-        case TokenType::LIST_END:
-            return "LIST_END";
-            break;
-        
-        case TokenType::SUB_LIST_START:
-            return "SUB_LIST_START";
-            break;
-        
-        case TokenType::SUB_LIST_END:
-            return "SUB_LIST_END";
-            break;
 
         default:
             return TokenTypeString[t.type];
@@ -307,83 +282,107 @@ std::string get_token_string(const Token &t)
     return "";
 }
 
-std::string trim_num_string(const std::string &num)
+std::string trim_num_string(const std::string& num)
 {
     std::string res = "";
 
     for (int i = num.length() - 1; i > 0; i--)
     {
-        if (num.at(i) != '0')
-        {
-            i += num.at(i) == '.' ? -1 : 0;
+        if (num.at(i) == '0')
+            continue;
 
-            for (int j = 0; j <= i; j++)
-                res += num.at(j);
+        i += (num.at(i) == '.') ? -1 : 0;
 
-            break;
-        }
+        for (int j = 0; j <= i; j++)
+            res += num.at(j);
+        break;
     }
 
     return res;
 }
 
-int find_tag(const std::vector<Token> &list, const Token &tag)
+int find_tag(const std::vector<Token>& list, const Token& tag)
 {
-    if (list.empty() || !is_tag(tag))
+    if (!is_tag(tag) || list.empty())
         return -1;
 
     std::string value = get_token_string(tag);
     int pos = -1;
 
+    auto does_match = [&tag, &value](const Token& comp)
+    {
+        if (comp.type == tag.type && value == get_token_string(comp))
+                return true;
+
+        return false;
+    };
+
     switch (tag.type)
     {
         case TokenType::TAG_GLOBAL:
         {
-            for (int i = 0; i < list.size(); i++)
-            {
-                if (list.at(i).type == tag.type && get_token_string(list.at(i)) == value)
-                    return i;
-            }
+            auto it = std::find_if(list.rbegin(), list.rend(), does_match);
+            return it != list.rend() ? list.size() - (it - list.rbegin()) - 1 : 0;
+
             break;
         }
     
         case TokenType::TAG_LOCAL:
         {
-            for (int i = list.size() - 1; i >= 0; i--)
+            auto it = std::find_if(list.rbegin(), list.rend(),
+                    [&tag, &value](const Token& comp)
+                    {
+                        return comp.type == TokenType::FUNCTION_CALL;
+                    });
+
+            int pos = list.size() - (it != list.rend() ? (it - list.rbegin()) : 0);
+
+            for (int i = pos; i < list.size(); i++)
             {
-                if (list.at(i).type == TokenType::TAG_LOCAL && get_token_string(list.at(i)) == value)
-                    pos = i;
-                else if (list.at(i).type == TokenType::FUNCTION_CALL)
-                    return pos;
+                if (does_match(list.at(i)))
+                    return i;
             }
 
-            return pos;
             break;
         }
 
         case TokenType::TAG_BLOCK:
         {
-            for (int i = list.size() - 1; i >= 0; i--)
+            auto it = std::find_if(list.rbegin(), list.rend(),
+                    [&tag, &value](const Token& comp)
+                    {
+                        return is_stack_break(comp);
+                    });
+
+            int pos = list.size() - (it != list.rend() ? (it - list.rbegin()) : 0);
+
+            for (int i = pos; i < list.size(); i++)
             {
-                if (list.at(i).type == TokenType::TAG_BLOCK)
-                    pos = (get_token_string(list.at(i)) == value) ? i : pos;
-                else if (list.at(i).type == TokenType::LOOP_BLOCK || list.at(i).type == TokenType::CONDITION_BLOCK || list.at(i).type == TokenType::BLOCK)
-                    return pos;
+                if (does_match(list.at(i)))
+                    return i;
             }
+
             break;
         }
     
         case TokenType::TAG_MEMBER:
         {
-            for (int i = list.size() - 1; i >= 0; i--)
+            auto it = std::find_if(list.rbegin(), list.rend(),
+                    [&tag, &value](const Token& comp)
+                    {
+                        return comp.type == TokenType::LIST_START;
+                    });
+
+            int pos = list.size() - (it != list.rend() ? (it - list.rbegin()) : 0);
+
+            for (int i = pos; i < list.size(); i++)
             {
-                if (list.at(i).type == TokenType::TAG_MEMBER)
-                {
-                    if (get_token_string(list.at(i)) == value)
-                        return i;
-                } else if (list.at(i).type == TokenType::LIST_START)
-                    return -1;
+                if (does_match(list.at(i)))
+                    return i;
             }
+
+            return -1;
+
             break;
         }
 
@@ -401,7 +400,7 @@ void error_msg(const Node* node, const char* explanation)
     std::cout << explanation << std::endl;
 }
 
-bool is_valid_extension(const std::string &file, const std::string &extension)
+bool is_valid_extension(const std::string& file, const std::string& extension)
 {
     bool result = false;
 
@@ -411,7 +410,7 @@ bool is_valid_extension(const std::string &file, const std::string &extension)
     return result;
 }
 
-std::string get_base_path(const std::string &file)
+std::string get_base_path(const std::string& file)
 {
     std::string result = file;
     while (!result.empty() && result.back() != '/' && result.back() != '\\')

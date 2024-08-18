@@ -73,6 +73,8 @@ enum CommandEnum
     STRLEN,
     LEN,
     CAT,
+    OPEN_LIB,
+    EXECUTE,
     EXIT
 };
 
@@ -123,35 +125,54 @@ struct Function
 extern std::vector<std::string> included_files;
 extern const char* TokenTypeString[];
 
-Node* tokenize(const std::string &executable_path, const std::string &program_path, const std::string &code, const std::string &file_name = "user session");
+Node* tokenize(const std::string& executable_path, const std::string& program_path, const std::string& code, const std::string& file_name = "user session");
 bool lex(Node* Nodes);
 bool parse(Node* Nodes);
-bool interpret(const std::string &executable_path, const std::string &program_path, Node* program, std::vector<Token> &backup_stack);
+bool interpret(const std::string& executable_path, const std::string& program_path, Node* program, std::vector<Token>& backup_stack);
 
-std::string load_file(const std::string &path);
+std::string load_file(const std::string& path);
 void delete_nodes(Node* pointer);
 void delete_sub_list(Node* start, Node* end);
-CommandEnum get_command_enum(const std::string val);
-std::string get_token_string(const Token &t = {.type = TokenType::NULL_TOKEN});
-OperatorEnum get_operator_enum(const std::string &val);
-std::string get_operator_string(const OperatorEnum &val);
-const char* get_command_string(const CommandEnum &c);
-std::string trim_num_string(const std::string &num);
-bool is_num(const std::string &val);
+CommandEnum get_command_enum(const std::string& val);
+std::string get_token_string(const Token& t = {.type = TokenType::NULL_TOKEN});
+OperatorEnum get_operator_enum(const std::string& val);
+std::string get_operator_string(const OperatorEnum& val);
+const char* get_command_string(const CommandEnum& c);
+std::string trim_num_string(const std::string& num);
+bool is_num(const std::string& val);
 
-int find_tag(const std::vector<Token> &list, const Token &tag);
+int find_tag(const std::vector<Token>& list, const Token& tag);
 void error_msg(const Node* node, const char* explanation);
-bool is_valid_extension(const std::string &file, const std::string &extension);
+bool is_valid_extension(const std::string& file, const std::string& extension);
 std::string getexepath();
-std::string get_base_path(const std::string &file);
+std::string get_base_path(const std::string& file);
 
-inline bool is_tag(const Token &t)
+inline bool is_tag(const Token& t)
 {
-    return (t.type >= TokenType::TAG_GLOBAL && t.type <= TokenType::TAG_MEMBER);
+    return !(t.type < TokenType::TAG_GLOBAL || t.type > TokenType::TAG_MEMBER);
 }
 
-inline bool is_value(const Token &t)
+inline bool is_value(const Token& t)
 {
-    return (t.type >= TokenType::DATA_String && t.type <= TokenType::DATA_Bool);
+    return !(t.type < TokenType::DATA_String || t.type > TokenType::DATA_Bool);
 }
+
+inline bool is_stack_break(const Token& tok)
+{
+    return tok.type >= TokenType::FUNCTION_CALL;
+}
+
+class InterpreterException : public std::exception
+{
+    private:
+        const std::string message;
+
+    public:
+        InterpreterException(const std::string& msg) : message(msg) {}
+
+        const char* what()
+        {
+            return message.c_str();
+        }
+};
 

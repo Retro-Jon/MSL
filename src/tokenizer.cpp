@@ -3,7 +3,7 @@
 
 std::vector<std::string> included_files;
 
-Node* tokenize(const std::string &executable_path, const std::string &program_path, const std::string &code, const std::string &file_name)
+Node* tokenize(const std::string& executable_path, const std::string& program_path, const std::string& code, const std::string& file_name)
 {
     Node* list = new Node();
     Node* pointer = list;

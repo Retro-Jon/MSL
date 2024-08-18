@@ -2,7 +2,7 @@ $ (bubble-sort) [<list.l>] defunc
     len [] swap {1} - {<count.l>} swap
 
     [<i.l> -1 <count.l> 1] for
-        [<a.l>] [<list.l> <i.l>] at merge
+        [<list.l> <i.l>] at {<a.l>} swap
     
         [<j.l> <i.l>] [<count.l> 1] - {1} merge for
             [<list.l> <j.l>] at {<b.l>} swap
@@ -11,8 +11,8 @@ $ (bubble-sort) [<list.l>] defunc
             [<b.l>] get get {<b-val.l>} swap
 
             [<a-val.l> <b-val.l>] > if
-                [<a.l>] get [<b-val.l>] get =
-                [<b.l>] get [<a-val.l>] get =
+                [<a.l>] get [<b-val.l>] =
+                [<b.l>] get [<a-val.l>] =
             end
         end
     end
