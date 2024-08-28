@@ -159,7 +159,7 @@ inline bool is_value(const Token& t)
 
 inline bool is_stack_break(const Token& tok)
 {
-    return tok.type >= TokenType::FUNCTION_CALL;
+    return tok.type >= TokenType::FUNCTION_CALL || tok.type == TokenType::LIST_START;
 }
 
 class InterpreterException : public std::exception
