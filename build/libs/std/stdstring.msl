@@ -23,19 +23,19 @@ $ (get-next-token) [<text.l> <index.l> <delim.l>] defunc
 
     # start at <start.l> - 1, go till <text.l> length, and step by one.
     [<i.l>] [<index.l> 1] - [<text.l>] get strlen [3] merge-x {1} for
-        [<c.l>]
+        [<c.b>]
             [<text.l>] get {<i.l>} at ?
                 [<index.l>] [<i.l>] get =
                 break
             end
         merge
 
-        [<c.l> <delim.l>] == if
+        [<c.b> <delim.l>] == if
             [<index.l>] [<i.l> 1] + =
             break
         end
 
-        [<result.l>] dup-list [<c.l>] get merge cat =
+        [<result.l>] dup-list [<c.b>] get merge cat =
     end
 
     [<delim.l> ' '] == if

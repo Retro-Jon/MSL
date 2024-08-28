@@ -351,7 +351,7 @@ int find_tag(const std::vector<Token>& list, const Token& tag)
             auto it = std::find_if(list.rbegin(), list.rend(),
                     [&tag, &value](const Token& comp)
                     {
-                        return is_stack_break(comp);
+                        return is_stack_break(comp) && comp.type != TokenType::LIST_START;
                     });
 
             int pos = list.size() - (it != list.rend() ? (it - list.rbegin()) : 0);
