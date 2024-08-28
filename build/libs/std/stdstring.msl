@@ -35,7 +35,7 @@ $ (get-next-token) [<text.l> <index.l> <delim.l>] defunc
             break
         end
 
-        [<result.l>] dup-list {<c.b>} cat =
+        [<result.l>] dup-list [<c.b>] get merge cat =
     end
 
     [<delim.l> ' '] == if
