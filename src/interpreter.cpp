@@ -309,13 +309,11 @@ bool interpret(const std::string& executable_path, const std::string& program_pa
 
                         case OperatorEnum::INCREMENT:
                         {
-                            check_exception(!is_tag(values.front()), get_token_string(res) + " : Expected a tag.");
                             res = get_tag(stack, values.front());
-                            check_exception((!is_value(res)), get_token_string(res) + " : Tag does not lead to a numeric value.");
+                            check_exception((!is_value(res)), get_token_string(res) + " : Expected a numeric value.");
 
                             res.value = std::any_cast<float>(res.value) + 1;
-
-                            stack.at(find_tag(stack, values.front())) = res;
+                            push_list(stack, {res});
                             break;
                         }
 
@@ -336,46 +334,46 @@ bool interpret(const std::string& executable_path, const std::string& program_pa
                         case OperatorEnum::LESS_THAN:
                         case OperatorEnum::LESS_THAN_EQUAL:
                         {
-                            res = get_tag(stack, values[0]);
+                            Token val_a = get_tag(stack, values.front());
 
                             check_exception(is_tag(res), get_token_string(res) + ": Tag not found.");
 
                             for (int v = 1; v < values.size(); v++)
                             {
-                                Token val = get_tag(stack, values[v]);
+                                Token val_b = get_tag(stack, values[v]);
 
-                                check_exception(is_tag(val), get_token_string(val) + ": Tag not found.");
-                                check_exception((res.type != val.type && res.type != TokenType::DATA_String), (std::string(TokenTypeString[res.type]) + " " + TokenTypeString[val.type] + " : Can only compare values of matching types."));
+                                check_exception(is_tag(val_b), get_token_string(val_b) + ": Tag not found.");
+                                check_exception((val_a.type != val_b.type && val_a.type != TokenType::DATA_String), (std::string(get_token_string(val_a)) + " (" + TokenTypeString[val_a.type] + ") " + get_token_string(val_b) + " (" + TokenTypeString[val_b.type] + ") : Can only compare values of matching types."));
 
                                 switch (op)
                                 {
                                     case OperatorEnum::EQUAL:
-                                        if (!equal(res, val))
+                                        if (!equal(val_a, val_b))
                                             set_res(false);
                                         break;
 
                                     case OperatorEnum::NOT_EQUAL:
-                                        if (equal(res, val))
+                                        if (equal(val_a, val_b))
                                             set_res(false);
                                         break;
 
                                     case OperatorEnum::GREATER_THAN:
-                                        if (greater(res, val))
+                                        if (greater(val_a, val_b))
                                             set_res(false);
                                         break;
                                     
                                     case OperatorEnum::GREATER_THAN_EQUAL:
-                                        if (!greater(res, val) && !equal(res, val))
+                                        if (!greater(val_a, val_b) && !equal(val_a, val_b))
                                             set_res(false);
                                         break;
 
                                     case OperatorEnum::LESS_THAN:
-                                        if (greater(res, val))
+                                        if (greater(val_a, val_b))
                                             set_res(false);
                                         break;
 
                                     case OperatorEnum::LESS_THAN_EQUAL:
-                                        if (greater(res, val) && !equal(res, val))
+                                        if (greater(val_a, val_b) && !equal(val_a, val_b))
                                             set_res(false);
                                         break;
 
@@ -383,6 +381,8 @@ bool interpret(const std::string& executable_path, const std::string& program_pa
                                         set_res(false);
                                         break;
                                 }
+
+                                val_a = val_b;
                             }
 
                             push_list(stack, {{.type = TokenType::DATA_Bool, .value = !res_set}});
