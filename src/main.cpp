@@ -21,7 +21,7 @@ int main(int argc, char** argv)
         Node* program = tokenize(executable_path, program_path, code, program_path);
 
         if (lex(program))
-            if (parse(program))
+            if (parse(program, stack))
                 interpret(executable_path, get_base_path(program_path), program, stack);
         
         delete_nodes(program);
@@ -42,7 +42,7 @@ int main(int argc, char** argv)
             Node* program = tokenize(executable_path, program_path, input, program_path);
 
             if (lex(program))
-                if (parse(program))
+                if (parse(program, stack))
                     interpret(executable_path, program_path, program, stack);
 
             delete_nodes(program);

@@ -2,7 +2,7 @@
 #include <vector>
 #include <map>
 
-bool parse(Node* nodes)
+bool parse(Node* nodes, std::vector<Token>& stack)
 {
     #ifdef DEBUG
         const auto start = std::chrono::high_resolution_clock::now();
@@ -16,6 +16,8 @@ bool parse(Node* nodes)
 
     bool in_list = false;
     int count = 0;
+
+    int estimated_stack_size = 0;
  
     for (current = nodes; current != nullptr; previous = current, current = current->default_next, count++)
     {
@@ -24,6 +26,9 @@ bool parse(Node* nodes)
         switch (current->t.type)
         {
             case TokenType::LIST_START:
+            {
+                estimated_stack_size++;
+            }
             case TokenType::SUB_LIST_START:
             {
                 if (!node_stack.empty() && (node_stack.back()->t.type == TokenType::LIST_START || node_stack.back()->t.type == TokenType::SUB_LIST_START))
@@ -111,6 +116,7 @@ bool parse(Node* nodes)
                     error_msg(current, "Stray value outside of list.");
                     return false;
                 }
+                estimated_stack_size++;
                 break;
             }
 
@@ -187,13 +193,20 @@ bool parse(Node* nodes)
 
     if (!node_stack.empty())
     {
-        if (node_stack.back()->t.type == TokenType::COMMAND)
-            error_msg(node_stack.back(), "Block not closed with 'end' command.");
-        else if (node_stack.back()->t.type == TokenType::LIST_START)
-            error_msg(node_stack.back(), "Unclosed list.");
-        else if (node_stack.back()->t.type == TokenType::SUB_LIST_START)
-            error_msg(node_stack.back(), "Unclosed sub list.");
-        return false;
+        switch (node_stack.back()->t.type)
+        {
+            case TokenType::COMMAND:
+                error_msg(node_stack.back(), "Block not closed with 'end' command.");
+                break;
+            case TokenType::LIST_START:
+                error_msg(node_stack.back(), "Unclosed list.");
+                break;
+            case TokenType::SUB_LIST_START:
+                error_msg(node_stack.back(), "Unclosed sub list.");
+                break;
+            default:
+                return false;
+        }
     }
 
     for (std::pair<std::string, int> p : function_counter)
@@ -206,10 +219,7 @@ bool parse(Node* nodes)
         
         while (end != nullptr && get_command_enum(get_token_string(end->t).c_str()) != CommandEnum::END)
         {
-            if (end->alt_next != nullptr)
-                end = end->alt_next;
-            else
-                end = end->default_next;
+            end = end->alt_next != nullptr ? end->alt_next : end->default_next;
         }
 
         delete_sub_list(start, end);
@@ -251,20 +261,26 @@ bool parse(Node* nodes)
     // Delete duplicate cache commands
     while (current != nullptr)
     {
-        if (get_command_enum(get_token_string(current->t).c_str()) == CommandEnum::CACHE)
+        if (get_command_enum(get_token_string(current->t).c_str()) == CommandEnum::CACHE &&
+                get_command_enum(get_token_string(current->default_next->t).c_str()) == CommandEnum::CACHE)
         {
-            if (get_command_enum(get_token_string(current->default_next->t).c_str()) == CommandEnum::CACHE)
-            {
-                Node* temp = current->default_next;
-                Node* next = temp->default_next;
-                delete temp;
-                current->default_next = next;
-                continue;
-            }
+            Node* temp = current->default_next;
+            Node* next = temp->default_next;
+            delete temp;
+            current->default_next = next;
+            continue;
         }
 
         current = current->default_next;
     }
+
+    // reserve next highest power of 2 from estimated_stack_size
+    int r = 0;
+
+    while (estimated_stack_size >>= 1)
+        r++;
+
+    stack.reserve(r << 1);
 
     #ifdef DEBUG
         const auto stop = std::chrono::high_resolution_clock::now();

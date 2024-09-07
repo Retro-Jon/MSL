@@ -39,7 +39,7 @@ Node* tokenize(const std::string& executable_path, const std::string& program_pa
 
     for (char c : code_string)
     {
-        line_count += (c == '\n') ? 1 : 0;
+        line_count += (c == '\n');
 
         in_comment = (c == '#' && !in_string) ? true : (c == '\n' && in_comment) ? false : in_comment;
         
@@ -121,7 +121,7 @@ Node* tokenize(const std::string& executable_path, const std::string& program_pa
 
             pointer->default_next = new Node();
             pointer = pointer->default_next;
-            pointer->line = (c == '\n') ? line_count - 1 : line_count;
+            pointer->line = line_count - (c == '\n');
             pointer->t.value = current;
             pointer->file_source = file;
             current.clear();
