@@ -149,22 +149,6 @@ const std::map<const CommandEnum, const std::string> enum_command_map = {
     {CommandEnum::EXIT, "exit"}
 };
 
-CommandEnum get_command_enum(const std::string& val)
-{
-    if (command_enum_map.count(val) > 0)
-        return command_enum_map.at(val);
-
-    return CommandEnum::UNKNOWN_COMMAND;
-}
-
-const char* get_command_string(const CommandEnum& c)
-{
-    if (enum_command_map.count(c) > 0)
-        return enum_command_map.at(c).c_str();
-
-    return "UNKNOWN_COMMAND";
-}
-
 const std::map<const std::string, const OperatorEnum> operator_enum_map = {
     {"+", OperatorEnum::ADDITION},
     {"-", OperatorEnum::SUBTRACTION},
@@ -204,16 +188,6 @@ const std::map<const OperatorEnum, const std::string> enum_operator_map = {
     {OperatorEnum::LESS_THAN, "<"},
     {OperatorEnum::LESS_THAN_EQUAL, "<="}
 };
-
-OperatorEnum get_operator_enum(const std::string& val)
-{
-    return (operator_enum_map.count(val) > 0) ? operator_enum_map.at(val) : OperatorEnum::UNKNOWN_OPERATOR;
-}
-
-std::string get_operator_string(const OperatorEnum& val)
-{
-    return (enum_operator_map.count(val) > 0) ? enum_operator_map.at(val) : "UNKNOWN_OPERATOR";
-}
 
 const char* TokenTypeString[] = {
     "NULL_TOKEN",
@@ -311,10 +285,7 @@ int find_tag(const std::vector<Token>& list, const Token& tag)
 
     auto does_match = [&tag, &value](const Token& comp)
     {
-        if (comp.type == tag.type && value == get_token_string(comp))
-                return true;
-
-        return false;
+        return comp.type == tag.type && value == get_token_string(comp);
     };
 
     switch (tag.type)
