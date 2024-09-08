@@ -663,7 +663,6 @@ bool interpret(const std::string& executable_path, const std::string& program_pa
                         case CommandEnum::INT:
                         {
                             std::vector<Token> values = pop_list(stack);
-                            print_list(values);
     
                             for (int i = 0; i < values.size(); i++)
                             {
