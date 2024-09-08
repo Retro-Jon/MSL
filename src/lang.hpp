@@ -48,7 +48,6 @@ enum CommandEnum
     AT,
     GET,
     GET_LIST,
-    GET_LIST_VALUES,
     MERGE,
     MERGE_X,
     INT,

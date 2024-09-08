@@ -95,10 +95,13 @@ Node* tokenize(const std::string& executable_path, const std::string& program_pa
             directive_arg.clear();
             continue;
         }
-        
-        in_string = (c == '\"' && !in_char) ? !in_string : in_string;
-        in_char = (c == '\'' && !in_string) ? !in_char : in_char;
-        
+
+        if (c == '\"' && !in_char)
+            in_string = !in_string;
+
+        if (c == '\'' && !in_string)
+            in_char = !in_char;
+
         if ((c != ' ' && c != '[' && c != ']' && c != '{' && c != '}' && c != '\n') || (in_string || in_char))
             current += c;
         else
