@@ -100,18 +100,14 @@ bool lex(Node* nodes)
                 }
 
             } else {
-                if ((val != "--" && val != "++") && (isdigit(val.front()) || (val.front() == '-') && val.length() > 1))
+                if (is_num(val))
                 {
-                    if (is_num(val))
-                    {
-                        pointer->t.type = TokenType::DATA_Number;
-                        pointer->t.value = std::any_cast<float>(std::stof(val));
-                    }
+                    pointer->t.type = TokenType::DATA_Number;
+                    pointer->t.value = std::any_cast<float>(std::stof(val));
                 }
 
                 if (pointer->t.type != TokenType::NULL_TOKEN)
                 {
-                    int i = 0;
                     for (char c : val)
                     {
                         if (!isdigit(c) && c != '.' && c != '-')
@@ -120,7 +116,6 @@ bool lex(Node* nodes)
                             error_msg(pointer, "Numeric values cannot include letters.");
                             return false;
                         }
-                        i++;
                     }
                 } else {
                     OperatorEnum o = get_operator_enum(val);
@@ -135,7 +130,7 @@ bool lex(Node* nodes)
                         pointer->t.value = c;
                         pointer->t.type = TokenType::COMMAND;
                     } else {
-                        error_msg(pointer, std::string(val + " Unknown command.").c_str());
+                        error_msg(pointer, std::string(val + " Unrecognized token.").c_str());
                         return false;
                     }
                 }

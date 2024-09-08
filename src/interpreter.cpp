@@ -610,24 +610,6 @@ bool interpret(const std::string& executable_path, const std::string& program_pa
                             break;
                         }
 
-                        case CommandEnum::GET_LIST_VALUES:
-	    			    {
-                            std::vector<Token> tag = pop_list(stack);
-                            check_exception((tag.size() != 1 || tag.back().type != TokenType::DATA_Number), "Expected a single integer value.");
-                            push_list(stack, {});
-
-                            for (int i = int(std::any_cast<float>(tag.front().value)); i < stack.size(); i++)
-                            {
-                                Token tok = get_tag(stack, stack.at(i));
-
-                                if (tok.type == TokenType::LIST_START || is_stack_break(tok))
-                                    break;
-                                    
-                                stack.push_back(tok);
-                            }
-                            break;
-    				    }
-
                         case CommandEnum::MERGE:
                         {
                             std::vector<Token> list = pop_list(stack);
@@ -663,7 +645,6 @@ bool interpret(const std::string& executable_path, const std::string& program_pa
                         case CommandEnum::INT:
                         {
                             std::vector<Token> values = pop_list(stack);
-                            print_list(values);
     
                             for (int i = 0; i < values.size(); i++)
                             {
@@ -1076,7 +1057,7 @@ bool interpret(const std::string& executable_path, const std::string& program_pa
                             while (!list.empty())
                             {
                                 Token t = get_tag(stack, list.back());
-                                check_exception(is_tag(t), get_token_string(t) + ": Cannot concatonate tags.");
+                                check_exception(is_tag(t), get_token_string(t) + ": The provided tag cannot be found.");
                                 res.value = get_token_string(res) + get_token_string(t);
                                 list.pop_back();
                             }
