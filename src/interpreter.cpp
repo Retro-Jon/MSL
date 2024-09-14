@@ -442,7 +442,6 @@ bool interpret(const std::string& executable_path, const std::string& program_pa
                             std::cout << output;
                             std::flush(std::cout);
                             break;
-
                         }
 
                         case CommandEnum::PRINT:

@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <map>
-#define VERSION "1"
+#define VERSION "1.1"
 #define EXTENSION ".msl"
 #ifdef DEBUG
 #include <iostream>

@@ -77,7 +77,6 @@ const std::map<const std::string, const CommandEnum> command_enum_map = {
     {"at", CommandEnum::AT},
     {"get", CommandEnum::GET},
     {"get-list", CommandEnum::GET_LIST},
-    {"get-list-values", CommandEnum::GET_LIST_VALUES},
     {"merge", CommandEnum::MERGE},
     {"merge-x", CommandEnum::MERGE_X},
     {"int", CommandEnum::INT},
