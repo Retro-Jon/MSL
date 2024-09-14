@@ -1,6 +1,7 @@
 #include "lang.hpp"
 #include <cctype>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <algorithm>
 
@@ -37,11 +38,18 @@ int main(int argc, char** argv)
         std::cout << "REPL Mode" << std::endl;
         std::string input;
         std::map<int, std::string> code;
+        bool was_insert = false;
 
         do
         {
-            std::cout << "\nEnter commands:\n\n> ";
+            if (!was_insert)
+                std::cout << "\nEnter commands:\n\n> ";
+            else
+                std::cout << "> ";
+
             std::getline(std::cin, input);
+
+            was_insert = false;
 
             if (input[0] == ':')
             {
@@ -57,6 +65,8 @@ int main(int argc, char** argv)
                     index++;
                     c = command[index];
                 }
+
+                // A random comment
 
                 int tmp_index = index;
 
@@ -78,9 +88,58 @@ int main(int argc, char** argv)
                         int line = std::stoi(command);
                         
                         if (code.find(line) != code.end())
+                        {
                             code.at(line) = arg;
-                        else
+                            was_insert = true;
+                        } else if (line > 0)
+                        {
                             code.insert(std::pair<int, std::string>(line, arg));
+                            was_insert = true;
+                        } else {
+                            std::cout << "Invalid line number." << std::endl;
+                            was_insert = false;
+                        }
+
+                        continue;
+                    } else if (command == "load")
+                    {
+                        code.clear();
+                        std::string content = load_file(arg);
+                        std::string current = "";
+                        int line = 1;
+
+                        for (char c : content)
+                        {
+                            if (c == '\n')
+                            {
+                                code.insert_or_assign(line, current);
+                                line++;
+                                current.clear();
+                                continue;
+                            }
+                            current += c;
+                        }
+
+                        if (!current.empty())
+                            code.insert_or_assign(line, current);
+
+                        continue;
+                    } else if (command == "save")
+                    {
+                        input = "";
+
+                        for (int i = 1; i <= code.rbegin()->first; i++)
+                        {
+                            if (code.count(i) == 0)
+                                input += "\n";
+                            else
+                                input += code.at(i) + "\n";
+                        }
+
+                        std::ofstream file;
+                        file.open(arg);
+                        file << input;
+                        file.close();
 
                         continue;
                     } else if (command == "list" || command == "l")
@@ -94,10 +153,15 @@ int main(int argc, char** argv)
                     {
                         input = "";
 
-                        for (std::pair<int, std::string> l : code)
+                        for (int i = 1; i <= code.rbegin()->first; i++)
                         {
-                            input += l.second + "\n";
+                            if (code.count(i) == 0)
+                                input += "\n";
+                            else
+                                input += code.at(i) + "\n";
                         }
+                    } else {
+                        continue;
                     }
                 }
             }
