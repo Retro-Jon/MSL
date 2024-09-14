@@ -1,4 +1,4 @@
 build/msl.exe
 build/msl
 .cache/
-
+build/*.o

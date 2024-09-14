@@ -1,26 +1,37 @@
 CC = g++
-SRC = $(wildcard src/*.cpp)
+
+SRCS = $(wildcard src/*.cpp)
+SRC ?= $(SRCS)
+OBJS = $(foreach file, $(SRCS), build/$(notdir $(file:.cpp=.o)))
 BUILD_LINUX = build/msl
 BUILD_WIN = build/msl.exe
 
 debug:
 ifeq ($(OS),Windows_NT)
-	$(CC) -std=c++20 -D WINDOWS -D DEBUG $(SRC) -o $(BUILD_WIN) -fsanitize=leak -g -O0
+	$(foreach file, $(SRC), $(CC) -std=c++20 -D DEBUG -D WINDOWS -c $(file) -o build/$(notdir $(file:.cpp=.o)) -fsanitize=leak -g -O0;)
+	g++ $(OBJS) -o $(BUILD_WIN)
 else
-	$(CC) -std=c++20 -D LINUX -D DEBUG $(SRC) -o $(BUILD_LINUX) -fsanitize=leak -g -O0
+	$(foreach file, $(SRC), $(CC) -std=c++20 -D DEBUG -D LINUX -c $(file) -o build/$(notdir $(file:.cpp=.o)) -fsanitize=leak -g -O0;)
+	g++ $(OBJS) -o $(BUILD_LINUX)
 endif
 
 performance:
 ifeq ($(OS),Windows_NT)
-	$(CC) -std=c++20 -D WINDOWS -D DEBUG $(SRC) -o $(BUILD_WIN) -O3
+	$(foreach file, $(SRC), $(CC) -std=c++20 -D DEBUG -D WINDOWS -c $(file) -o bulid/$(notdir $(file:.cpp=.o)) -O3;)
+	g++ $(OBJS) -o $(BUILD_WIN)
 else
-	$(CC) -std=c++20 -D LINUX -D DEBUG $(SRC) -o $(BUILD_LINUX) -O3
+	$(foreach file, $(SRC), $(CC) -std=c++20 -D DEBUG -D LINUX -c $(file) -o build/$(notdir $(file:.cpp=.o)) -O3;)
+	g++ $(OBJS) -o $(BUILD_LINUX)
 endif
 
 release:
 ifeq ($(OS),Windows_NT)
-	$(CC) -std=c++20 -D WINDOWS $(SRC) -o $(BUILD_WIN) -O3
+	$(foreach file, $(SRC), $(CC) -std=c++20 -D WINDOWS -c $(file) -o build/$(notdir $(file:.cpp=.o)) -O3;)
+	g++ $(OBJS) -o $(BUILD_WIN)
 else
-	$(CC) -std=c++20 -D LINUX $(SRC) -o $(BUILD_LINUX) -O3
+	$(foreach file, $(SRC), $(CC) -std=c++20 -D LINUX -c $(file) -o build/$(notdir $(file:.cpp=.o)) -O3;)
+	g++ $(OBJS) -o $(BUILD_LINUX)
 endif
 
+clean:
+	$(foreach file, $(OBJS), rm $(file);)
