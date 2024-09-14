@@ -1,6 +1,7 @@
 #include "lang.hpp"
 #include <cctype>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <algorithm>
 
@@ -98,6 +99,47 @@ int main(int argc, char** argv)
                             std::cout << "Invalid line number." << std::endl;
                             was_insert = false;
                         }
+
+                        continue;
+                    } else if (command == "load")
+                    {
+                        code.clear();
+                        std::string content = load_file(arg);
+                        std::string current = "";
+                        int line = 1;
+
+                        for (char c : content)
+                        {
+                            if (c == '\n')
+                            {
+                                code.insert_or_assign(line, current);
+                                line++;
+                                current.clear();
+                                continue;
+                            }
+                            current += c;
+                        }
+
+                        if (!current.empty())
+                            code.insert_or_assign(line, current);
+
+                        continue;
+                    } else if (command == "save")
+                    {
+                        input = "";
+
+                        for (int i = 1; i <= code.rbegin()->first; i++)
+                        {
+                            if (code.count(i) == 0)
+                                input += "\n";
+                            else
+                                input += code.at(i) + "\n";
+                        }
+
+                        std::ofstream file;
+                        file.open(arg);
+                        file << input;
+                        file.close();
 
                         continue;
                     } else if (command == "list" || command == "l")
